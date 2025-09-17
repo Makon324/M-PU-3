@@ -12,23 +12,23 @@ class Token:
 
 
 class AssemblerTokenizer:
-    def __init__(self):
-        self.token_specification =[
-            ('COMMENT', r';[^\n]*'),
-            ('LABEL', r'\.[A-Za-z_][A-Za-z0-9_]*:'),
-            ('IDENT', r'\.[A-Za-z_][A-Za-z0-9_]*'),
-            ('REGISTER', r'R[0-9]+'),
-            ('HEX', r'-?0x[0-9A-Fa-f]+'),
-            ('BIN', r'-?0b[01]+'),
-            ('DEC', r'-?[0-9]+'),
-            ('MNEMONIC', r'[A-Za-z]+'),
-            ('NEWLINE', r'\n'),
-            ('SKIP', r'[\t ,]+'),
-            ('MISMATCH', r'.')
-        ]
+    TOKEN_SPECIFICATION = (
+        ('COMMENT', r';[^\n]*'),
+        ('LABEL', r'\.[A-Za-z_][A-Za-z0-9_]*:'),
+        ('IDENT', r'\.[A-Za-z_][A-Za-z0-9_]*'),
+        ('REGISTER', r'R[0-9]+'),
+        ('HEX', r'-?0x[0-9A-Fa-f]+'),
+        ('BIN', r'-?0b[01]+'),
+        ('DEC', r'-?[0-9]+'),
+        ('MNEMONIC', r'[A-Za-z]+'),
+        ('NEWLINE', r'\n'),
+        ('SKIP', r'[\t ,]+'),
+        ('MISMATCH', r'.')
+    )
 
-        self.master_pattern = re.compile(
-            "|".join(f"(?P<{name}>{pattern})" for name, pattern in self.token_specification)
+    def __init__(self):
+        self.token_pattern = re.compile(
+            "|".join(f"(?P<{name}>{pattern})" for name, pattern in self.TOKEN_SPECIFICATION)
         )
 
     def tokenize(self, code: str) -> list[Token]:
@@ -36,21 +36,30 @@ class AssemblerTokenizer:
         line_num = 1
         line_start = 0 # tracks start index of current line
 
-        for mo in self.master_pattern.finditer(code):
-            kind = mo.lastgroup
-            value = mo.group()
-            column = mo.start() - line_start + 1
+        for match in self.token_pattern.finditer(code):
+            token_type = match.lastgroup
+            value = match.group()
+            column = match.start() - line_start + 1
 
-            if kind == 'NEWLINE':
+            if token_type == 'NEWLINE':
                 line_num += 1
-                line_start = mo.end()
-            elif kind in ('SKIP', 'COMMENT'):
+                line_start = match.end()
+            elif token_type in ('SKIP', 'COMMENT'):
                 continue
-            elif kind == 'MISMATCH':
-                raise UnexpectedChar(f"Unexpected char {value!r}", line_num, column)
+            elif token_type == 'MISMATCH':
+                raise UnexpectedCharError(
+                    f"Unexpected char {value!r}",
+                    line_num,
+                    column
+                )
             else:
                 tokens.append(
-                    Token(type=kind, value=value, line=line_num, start_column=column)
+                    Token(
+                        type=token_type,
+                        value=value,
+                        line=line_num,
+                        start_column=column
+                    )
                 )
 
         return tokens

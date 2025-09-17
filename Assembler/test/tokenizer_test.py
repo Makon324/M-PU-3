@@ -53,7 +53,7 @@ def test_unexpected_char():
     tokenizer = AssemblerTokenizer()
     code = "MOV R1, @"
 
-    with pytest.raises(UnexpectedChar) as exc_info:
+    with pytest.raises(UnexpectedCharError) as exc_info:
         tokenizer.tokenize(code)
     assert "Unexpected char '@'" in str(exc_info.value)
     assert exc_info.value.line == 1

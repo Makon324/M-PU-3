@@ -11,6 +11,13 @@ def make_tokens(*args: tuple[str, str, int, int]):
     """
     return [Token(type=t, value=v, line=l, start_column=c) for t, v, l, c in args]
 
+
+def test_empty():
+    tokens = []
+    parser = AssemblerParser(tokens)
+    result = parser.parse()
+    assert result == []
+
 def test_label():
     tokens = make_tokens(("LABEL", ".start:", 1, 1))
     parser = AssemblerParser(tokens)

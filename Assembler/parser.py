@@ -3,9 +3,9 @@ from errors import *
 from tokenizer import Token
 
 
-VALID_OPERAND_TYPES = frozenset({'REGISTER', 'DEC', 'HEX', 'BIN', 'IDENT'})
-
 class AssemblerParser:
+    VALID_OPERAND_TYPES = frozenset({'REGISTER', 'DEC', 'HEX', 'BIN', 'IDENT'})
+
     def __init__(self, tokens: list[Token]):
         self.tokens = tokens
         self.pos = 0
@@ -29,7 +29,7 @@ class AssemblerParser:
             token = self.advance()
             if not token:
                 break
-            elif token.type in VALID_OPERAND_TYPES:
+            elif token.type in AssemblerParser.VALID_OPERAND_TYPES:
                 operands.append(token)
             else:
                 raise InvalidSyntaxError(

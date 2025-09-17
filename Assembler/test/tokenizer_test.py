@@ -57,6 +57,7 @@ def test_unexpected_char():
         tokenizer.tokenize(code)
     assert "Unexpected char '@'" in str(exc_info.value)
     assert exc_info.value.line == 1
+    assert exc_info.value.column == 9
 
 
 

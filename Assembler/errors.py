@@ -21,4 +21,4 @@ class UnexpectedCharError(AssemblerError):
     """Raised when an unexpected character is encountered in input."""
 
 class InvalidSyntaxError(AssemblerError):
-    """Raised when an unexpected character is encountered in input."""
+    """Raised when invalid syntax is encountered in input."""

@@ -1,0 +1,609 @@
+[
+  {
+    "mnemonic": "JMP",
+    "description": "Jumps to location",
+    "operands": [
+      {
+        "type": "num",
+        "range": [0, 1023],
+        "description": "Target address"
+      }
+    ],
+    "code": "001000N_________"
+  },
+  {
+    "mnemonic": "BRH",
+    "description": "Jumps to location if condition is met",
+    "operands": [
+      {
+        "type": "num",
+        "range": [0, 3],
+        "description": "Condition code (0: Z == 1, 1: Z == 0, 2: C == 1, 3: C == 0)"
+      },
+      {
+        "type": "num",
+        "range": [0, 1023],
+        "description": "Target address"
+      }
+    ],
+    "code": "0011N_N_________"
+  },
+  {
+    "mnemonic": "CAL",
+    "description": "Call - pushes PC+1 onto stack, jumps to location",
+    "operands": [
+      {
+        "type": "num",
+        "range": [0, 1023],
+        "description": "Subroutine address"
+      }
+    ],
+    "code": "010110N_________"
+  },
+  {
+    "mnemonic": "RET",
+    "description": "Return - decrements SP by Frame Size, sets PC to CS.Pop()",
+    "operands": [
+      {
+        "type": "num",
+        "range": [0, 255],
+        "description": "Frame size"
+      }
+    ],
+    "code": "01100000N_______"
+  },
+  {
+    "mnemonic": "PSH",
+    "description": "Pushes value onto stack",
+    "operands": [
+      {
+        "type": "num",
+        "range": [-128, 255],
+        "description": "Value to push"
+      }
+    ],
+    "code": "01000000N_______"
+  },
+  {
+    "mnemonic": "PSHR",
+    "description": "Pushes register onto stack",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Register to push"
+      }
+    ],
+    "code": "01001R__00000000"
+  },
+  {
+    "mnemonic": "POP",
+    "description": "Pop Frame - decrements SP by frame size",
+    "operands": [
+      {
+        "type": "num",
+        "range": [0, 255],
+        "description": "Frame size"
+      }
+    ],
+    "code": "01111000N_______"
+  },
+  {
+    "mnemonic": "MST",
+    "description": "Memory Store (RA -> [adr])",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Register containing value to store"
+      },
+      {
+        "type": "num",
+        "range": [0, 255],
+        "description": "Memory address"
+      }
+    ],
+    "code": "10000R__N_______"
+  },
+  {
+    "mnemonic": "MSP",
+    "description": "Memory Store Pointer (RA -> [RP - offset-1])",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Register containing value to store"
+      },
+      {
+        "type": "reg",
+        "description": "Pointer register (base)"
+      },
+      {
+        "type": "num",
+        "range": [0, 31],
+        "description": "Offset"
+      }
+    ],
+    "code": "10001R__R__N____"
+  },
+  {
+    "mnemonic": "MSS",
+    "description": "Memory Store Stack (RA -> [SP - adr-1])",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Register containing value to store"
+      },
+      {
+        "type": "num",
+        "range": [0, 255],
+        "description": "Memory address (relative to stack)"
+      }
+    ],
+    "code": "10100R__N_______"
+  },
+  {
+    "mnemonic": "MSPS",
+    "description": "Memory Store Pointer, Stack (RA -> [(SP - offset - 1) - RP - 1])",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Register containing value to store"
+      },
+      {
+        "type": "reg",
+        "description": "Pointer register (base)"
+      },
+      {
+        "type": "num",
+        "range": [0, 31],
+        "description": "Offset"
+      }
+    ],
+    "code": "10110R__R__N____"
+  },
+  {
+    "mnemonic": "MLD",
+    "description": "Memory Load (RD <- [adr])",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination register"
+      },
+      {
+        "type": "num",
+        "range": [0, 255],
+        "description": "Memory address"
+      }
+    ],
+    "code": "10111R__N_______"
+  },
+  {
+    "mnemonic": "MLP",
+    "description": "Memory Load Pointer (RD <- [RP - offset-1])",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination register"
+      },
+      {
+        "type": "reg",
+        "description": "Pointer register (base)"
+      },
+      {
+        "type": "num",
+        "range": [0, 31],
+        "description": "Offset"
+      }
+    ],
+    "code": "11000R__R__N____"
+  },
+  {
+    "mnemonic": "MLS",
+    "description": "Memory Load Stack (RD <- [SP - adr - 1])",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination register"
+      },
+      {
+        "type": "num",
+        "range": [0, 255],
+        "description": "Memory address (relative to stack)"
+      }
+    ],
+    "code": "11001R__N_______"
+  },
+  {
+    "mnemonic": "MLPS",
+    "description": "Memory Load Pointer, Stack (RD <- [(SP - offset - 1) - RP - 1])",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination register"
+      },
+      {
+        "type": "reg",
+        "description": "Pointer register (base)"
+      },
+      {
+        "type": "num",
+        "range": [0, 31],
+        "description": "Offset"
+      }
+    ],
+    "code": "11100R__R__N____"
+  },
+  {
+    "mnemonic": "ADD",
+    "description": "Add (A + B)",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "reg",
+        "description": "First operand"
+      },
+      {
+        "type": "reg",
+        "description": "Second operand"
+      }
+    ],
+    "code": "11011R__R__R__00"
+  },
+  {
+    "mnemonic": "ADC",
+    "description": "Add with carry",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "reg",
+        "description": "First operand"
+      },
+      {
+        "type": "reg",
+        "description": "Second operand"
+      }
+    ],
+    "code": "11011R__R__R__01"
+  },
+  {
+    "mnemonic": "SUB",
+    "description": "Subtract (A - B)",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "reg",
+        "description": "First operand"
+      },
+      {
+        "type": "reg",
+        "description": "Second operand"
+      }
+    ],
+    "code": "11010R__R__R__00"
+  },
+  {
+    "mnemonic": "SUBC",
+    "description": "Subtract with carry",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "reg",
+        "description": "First operand"
+      },
+      {
+        "type": "reg",
+        "description": "Second operand"
+      }
+    ],
+    "code": "11010R__R__R__01"
+  },
+  {
+    "mnemonic": "ADI",
+    "description": "Add Immediate",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "reg",
+        "description": "Source"
+      },
+      {
+        "type": "num",
+        "range": [],
+        "description": "Immediate value"
+      }
+    ],
+    "code": "11101R__R__N____"
+  },
+  {
+    "mnemonic": "SUBI",
+    "description": "Subtract immediate",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "reg",
+        "description": "Source"
+      },
+      {
+        "type": "num",
+        "range": [],
+        "description": "Immediate value"
+      }
+    ],
+    "code": "11110R__R__N____"
+  },
+  {
+    "mnemonic": "OR",
+    "description": "OR (A | B)",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "reg",
+        "description": "First operand"
+      },
+      {
+        "type": "reg",
+        "description": "Second operand"
+      }
+    ],
+    "code": "01101R__R__R__11"
+  },
+  {
+    "mnemonic": "AND",
+    "description": "AND (A & B)",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "reg",
+        "description": "First operand"
+      },
+      {
+        "type": "reg",
+        "description": "Second operand"
+      }
+    ],
+    "code": "01101R__R__R__10"
+  },
+  {
+    "mnemonic": "XOR",
+    "description": "XOR (A ^ B)",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "reg",
+        "description": "First operand"
+      },
+      {
+        "type": "reg",
+        "description": "Second operand"
+      }
+    ],
+    "code": "01101R__R__R__01"
+  },
+  {
+    "mnemonic": "NOT",
+    "description": "NOT (!B)",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "reg",
+        "description": "Source"
+      }
+    ],
+    "code": "01010R__R__00000"
+  },
+  {
+    "mnemonic": "SHFT",
+    "description": "Bin Shift Down (A >> 1)",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "reg",
+        "description": "Source"
+      }
+    ],
+    "code": "10010R__R__00000"
+  },
+  {
+    "mnemonic": "SHFC",
+    "description": "Bin Shift Down with carry",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "reg",
+        "description": "Source"
+      }
+    ],
+    "code": "10010R__R__00001"
+  },
+  {
+    "mnemonic": "SHFE",
+    "description": "Bin Shift Down with sign extension",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "reg",
+        "description": "Source"
+      }
+    ],
+    "code": "10011R__R__00000"
+  },
+  {
+    "mnemonic": "SEX",
+    "description": "Sign Extend (copies most significant bit of A into all of D)",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "reg",
+        "description": "Source"
+      }
+    ],
+    "code": "01110R__R__00000"
+  },
+  {
+    "mnemonic": "MOVC",
+    "description": "Moves if condition is true",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "reg",
+        "description": "Source"
+      },
+      {
+        "type": "num",
+        "range": [0, 3],
+        "description": "Condition code (0: Z == 1, 1: Z == 0, 2: C == 1, 3: C == 0)"
+      }
+    ],
+    "code": "10101R__R__000N_"
+  },
+  {
+    "mnemonic": "PST",
+    "description": "Port Store",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Register containing value to output"
+      },
+      {
+        "type": "num",
+        "range": [0, 255],
+        "description": "Port number"
+      }
+    ],
+    "code": "00010R__N_______"
+  },
+  {
+    "mnemonic": "DPS",
+    "description": "Dual port store (stores both A and B into ports address and address+1)",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "First register (to port n)"
+      },
+      {
+        "type": "reg",
+        "description": "Second register (to port n+1)"
+      },
+      {
+        "type": "num",
+        "range": [0, 63],
+        "description": "Port number"
+      }
+    ],
+    "code": "00011R__R__N____"
+  },
+  {
+    "mnemonic": "PLD",
+    "description": "Port Load",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "num",
+        "range": [0, 255],
+        "description": "Port number"
+      }
+    ],
+    "code": "00001R__N_______"
+  },
+  {
+    "mnemonic": "LDI",
+    "description": "Load Immediate",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "num",
+        "range": [0, 255],
+        "description": "Immediate value"
+      }
+    ],
+    "code": "00101R__N_______"
+  },
+  {
+    "mnemonic": "PSHM",
+    "description": "Push Multiple - increments SP by specified amount",
+    "operands": [
+      {
+        "type": "num",
+        "range": [0, 255],
+        "description": "Amount"
+      }
+    ],
+    "code": "01111000N_______"
+  },
+  {
+    "mnemonic": "MOV",
+    "description": "Move",
+    "operands": [
+      {
+        "type": "reg",
+        "description": "Destination"
+      },
+      {
+        "type": "reg",
+        "description": "Source"
+      }
+    ],
+    "code": "11011R__R__00000"
+  },
+  {
+    "mnemonic": "NOP",
+    "description": "No-op",
+    "operands": [],
+    "code": "0000000000000000"
+  },
+  {
+    "mnemonic": "HLT",
+    "description": "Halt",
+    "operands": [],
+    "code": "1111100000000000"
+  }
+]

@@ -4,14 +4,14 @@ from tokenizer import Token
 
 
 class AssemblerParser:
-    VALID_OPERAND_TYPES = frozenset({'REGISTER', 'DEC', 'HEX', 'BIN', 'IDENT'})
+    _VALID_OPERAND_TYPES = frozenset({'REGISTER', 'DEC', 'HEX', 'BIN', 'IDENT'})
 
     def __init__(self, tokens: list[Token]):
         self.tokens = tokens
         self.pos = 0
         self.line = 0
 
-    def advance(self) -> Token:
+    def _advance(self) -> Token:
         """Advance to the next token and return it."""
         if self.pos >= len(self.tokens):
             return None
@@ -20,16 +20,16 @@ class AssemblerParser:
         self.pos += 1
         return tok
 
-    def collect_operands(self) -> list[Token]:
+    def _collect_operands(self) -> list[Token]:
         """Collect all operands for the current instruction."""
         operands = []
         current_line = self.line
 
         while current_line == self.line:
-            token = self.advance()
+            token = self._advance()
             if not token:
                 break
-            elif token.type in AssemblerParser.VALID_OPERAND_TYPES:
+            elif token.type in AssemblerParser._VALID_OPERAND_TYPES:
                 operands.append(token)
             else:
                 raise InvalidSyntaxError(
@@ -40,7 +40,7 @@ class AssemblerParser:
 
     def parse_line(self) -> dict:
         """Parse the current line of assembly code."""
-        tok = self.advance()
+        tok = self._advance()
         if not tok:
             return None
 
@@ -52,7 +52,7 @@ class AssemblerParser:
             }
 
         elif tok.type == 'MNEMONIC':
-            args = self.collect_operands()
+            args = self._collect_operands()
             return {
                 "type": "instruction",
                  "mnemonic": tok.value,

@@ -1,0 +1,293 @@
+[
+  {
+    "mnemonic": "JMP",
+    "operands": [
+      { "type": "num", "range": [0, 1023] }
+    ],
+    "code": "001000N_________"
+  },
+  {
+    "mnemonic": "BRH",
+    "operands": [
+      { "type": "num", "range": [0, 3] },
+      { "type": "num", "range": [0, 1023] }
+    ],
+    "code": "0011N_N_________"
+  },
+  {
+    "mnemonic": "CAL",
+    "operands": [
+      { "type": "num", "range": [0, 255] }
+    ],
+    "code": "010110N_________"
+  },
+  {
+    "mnemonic": "RET",
+    "operands": [
+      { "type": "num", "range": [0, 255] }
+    ],
+    "code": "01100000N_______"
+  },
+  {
+    "mnemonic": "PSH",
+    "operands": [
+      { "type": "num", "range": [-128, 255] }
+    ],
+    "code": "01000000N_______"
+  },
+  {
+    "mnemonic": "PSHR",
+    "operands": [
+      { "type": "reg" }
+    ],
+    "code": "01001R__00000000"
+  },
+  {
+    "mnemonic": "POP",
+    "operands": [
+      { "type": "num", "range": [0, 255] }
+    ],
+    "code": "01111000N_______"
+  },
+  {
+    "mnemonic": "MST",
+    "operands": [
+      { "type": "reg" },
+      { "type": "num", "range": [0, 255] }
+    ],
+    "code": "10000R__N_______"
+  },
+  {
+    "mnemonic": "MSP",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" },
+      { "type": "num", "range": [0, 31] }
+    ],
+    "code": "10001R__R__N____"
+  },
+  {
+    "mnemonic": "MSS",
+    "operands": [
+      { "type": "reg" },
+      { "type": "num", "range": [0, 255] }
+    ],
+    "code": "10100R__N_______"
+  },
+  {
+    "mnemonic": "MSPS",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" },
+      { "type": "num", "range": [0, 31] }
+    ],
+    "code": "10110R__R__N____"
+  },
+  {
+    "mnemonic": "MLD",
+    "operands": [
+      { "type": "reg" },
+      { "type": "num", "range": [0, 255] }
+    ],
+    "code": "10111R__N_______"
+  },
+  {
+    "mnemonic": "MLP",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" },
+      { "type": "num", "range": [0, 31] }
+    ],
+    "code": "11000R__R__N____"
+  },
+  {
+    "mnemonic": "MLS",
+    "operands": [
+      { "type": "reg" },
+      { "type": "num", "range": [0, 255] }
+    ],
+    "code": "11001R__N_______"
+  },
+  {
+    "mnemonic": "MLPS",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" },
+      { "type": "num", "range": [0, 31] }
+    ],
+    "code": "11100R__R__N____"
+  },
+  {
+    "mnemonic": "ADD",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" },
+      { "type": "reg" }
+    ],
+    "code": "11011R__R__R__00"
+  },
+  {
+    "mnemonic": "ADC",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" },
+      { "type": "reg" }
+    ],
+    "code": "11011R__R__R__01"
+  },
+  {
+    "mnemonic": "SUB",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" },
+      { "type": "reg" }
+    ],
+    "code": "11010R__R__R__00"
+  },
+  {
+    "mnemonic": "SUBC",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" },
+      { "type": "reg" }
+    ],
+    "code": "11010R__R__R__01"
+  },
+  {
+    "mnemonic": "ADI",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" },
+      { "type": "num", "range": [] }
+    ],
+    "code": "11101R__R__N____"
+  },
+  {
+    "mnemonic": "SUBI",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" },
+      { "type": "num", "range": [] }
+    ],
+    "code": "11110R__R__N____"
+  },
+  {
+    "mnemonic": "OR",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" },
+      { "type": "reg" }
+    ],
+    "code": "01101R__R__R__11"
+  },
+  {
+    "mnemonic": "AND",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" },
+      { "type": "reg" }
+    ],
+    "code": "01101R__R__R__10"
+  },
+  {
+    "mnemonic": "XOR",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" },
+      { "type": "reg" }
+    ],
+    "code": "01101R__R__R__01"
+  },
+  {
+    "mnemonic": "NOT",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" }
+    ],
+    "code": "01010R__R__00000"
+  },
+  {
+    "mnemonic": "SHFT",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" }
+    ],
+    "code": "10010R__R__00000"
+  },
+  {
+    "mnemonic": "SHFC",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" }
+    ],
+    "code": "10010R__R__00001"
+  },
+  {
+    "mnemonic": "SHFE",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" }
+    ],
+    "code": "10011R__R__00000"
+  },
+  {
+    "mnemonic": "SEX",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" }
+    ],
+    "code": "01110R__R__00000"
+  },
+  {
+    "mnemonic": "MOVC",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" },
+      { "type": "num", "range": [0, 3] }
+    ],
+    "code": "10101R__R__000N_"
+  },
+  {
+    "mnemonic": "PST",
+    "operands": [
+      { "type": "reg" },
+      { "type": "num", "range": [0, 255] }
+    ],
+    "code": "00010R__N_______"
+  },
+  {
+    "mnemonic": "DPS",
+    "operands": [
+      { "type": "reg" },
+      { "type": "reg" },
+      { "type": "num", "range": [0, 63] }
+    ],
+    "code": "00011R__R__N____"
+  },
+  {
+    "mnemonic": "PLD",
+    "operands": [
+      { "type": "reg" },
+      { "type": "num", "range": [0, 255] }
+    ],
+    "code": "00001R__N_______"
+  },
+  {
+    "mnemonic": "LDI",
+    "operands": [
+      { "type": "reg" },
+      { "type": "num", "range": [0, 255] }
+    ],
+    "code": "00101R__N_______"
+  },
+  {
+    "mnemonic": "NOP",
+    "operands": [],
+    "code": 0000000000000000
+  },
+  {
+    "mnemonic": "HLT",
+    "operands": [],
+    "code": 1111100000000000
+  }
+]

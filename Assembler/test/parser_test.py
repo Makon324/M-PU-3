@@ -1,15 +1,6 @@
 import pytest
-from tokenizer import Token
-from errors import *
+from tokenizer import make_tokens
 from parser import *
-
-
-def make_tokens(*args: tuple[str, str, int, int]):
-    """
-    Helper to build tokens:
-    make_tokens(("MNEMONIC", "MOV", 1, 1), ("REGISTER", "R1", 1, 5))
-    """
-    return [Token(type=t, value=v, line=l, start_column=c) for t, v, l, c in args]
 
 
 def test_empty():
@@ -19,17 +10,17 @@ def test_empty():
     assert result == []
 
 def test_label():
-    tokens = make_tokens(("LABEL", ".start:", 1, 1))
+    tokens = make_tokens([("LABEL", ".start:", 1, 1)])
     parser = AssemblerParser(tokens)
     result = parser.parse()
-    assert result == [{"type": "label", "label": ".start", "line": 1}]
+    assert result == [{"type": "label", "label": ".start", "line": 1, "column": 1}]
 
 def test_parse_instruction():
-    tokens = make_tokens(
+    tokens = make_tokens([
         ("MNEMONIC", "MOV", 1, 1),
         ("REGISTER", "R1", 1, 5),
-        ("DEC", "10", 1, 8),
-    )
+        ("DEC", "10", 1, 8)
+    ])
     parser = AssemblerParser(tokens)
     result = parser.parse()
     assert len(result) == 1
@@ -39,12 +30,12 @@ def test_parse_instruction():
     assert [tok for tok in instr["arguments"]] == [Token("REGISTER", "R1", 1, 5), Token("DEC", "10", 1, 8)]
 
 def test_multiple_lines():
-    tokens = make_tokens(
+    tokens = make_tokens([
         ("LABEL", ".loop:", 1, 1),
         ("MNEMONIC", "ADD", 2, 1),
         ("REGISTER", "R1", 2, 5),
-        ("REGISTER", "R2", 2, 8),
-    )
+        ("REGISTER", "R2", 2, 8)
+    ])
     parser = AssemblerParser(tokens)
     result = parser.parse()
     assert len(result) == 2

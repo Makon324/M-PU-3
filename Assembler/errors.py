@@ -1,5 +1,22 @@
+"""Custom exception classes for the assembler.
+
+This module defines all custom exception classes used throughout the assembler project.
+"""
+
+
 class AssemblerError(Exception):
-    """Base class for all assembler errors."""
+    """Base exception for all assembler custom errors.
+
+    Args:
+        message: Error description.
+        line: Line number where error occurred (1-indexed, optional).
+        column: Column number where error occurred (1-indexed, optional).
+
+    Attributes:
+        message: Error description.
+        line: Line number where error occurred.
+        column: Column number where error occurred.
+    """
 
     def __init__(self, message, line=None, column=None):
         self.message = message
@@ -22,3 +39,24 @@ class UnexpectedCharError(AssemblerError):
 
 class InvalidSyntaxError(AssemblerError):
     """Raised when invalid syntax is encountered in input."""
+
+class InvalidInstructionError(AssemblerError):
+    """Raised when an invalid instruction is encountered in input."""
+
+class InvalidOperandError(AssemblerError):
+    """Raised when an invalid operand is encountered in input."""
+
+class InvalidRegisterError(AssemblerError):
+    """Raised when an invalid register is encountered in input."""
+
+class InvalidAddressError(AssemblerError):
+    """Raised when an invalid address is encountered in input."""
+
+class ValueOutOfRangeError(AssemblerError):
+    """Raised when an invalid value is encountered in input."""
+
+class InstructionsError(AssemblerError):
+    """Raised when error is encountered in instructions file."""
+
+
+

@@ -4,6 +4,13 @@ from tokenizer import Token
 
 
 class AssemblerParser:
+    """Parses tokens into program structure with labels and instructions.
+
+    Attributes:
+        tokens: List of tokens to parse.
+        pos: Current position in the token list.
+        line: Current line number being parsed.
+    """
     _VALID_OPERAND_TYPES = frozenset({'REGISTER', 'DEC', 'HEX', 'BIN', 'IDENT'})
 
     def __init__(self, tokens: list[Token]):
@@ -26,15 +33,15 @@ class AssemblerParser:
         current_line = self.line
 
         while current_line == self.line:
-            token = self._advance()
-            if not token:
+            tok = self._advance()
+            if not tok:
                 break
-            elif token.type in AssemblerParser._VALID_OPERAND_TYPES:
-                operands.append(token)
+            elif tok.type in AssemblerParser._VALID_OPERAND_TYPES:
+                operands.append(tok)
             else:
                 raise InvalidSyntaxError(
-                    f"Unexpected token type {token.type} with value {token.value!r}",
-                    line=token.line
+                    f"Unexpected token type {tok.type} with value {tok.value!r}",
+                    line=tok.line, column=tok.start_column
                 )
         return operands
 
@@ -47,8 +54,9 @@ class AssemblerParser:
         if tok.type == 'LABEL':
             return {
                 "type": "label",
-                "label": tok.value[:-1], # drop ':'
-                "line": tok.line
+                "label": tok.value.removesuffix(':'),
+                "line": tok.line,
+                "column": tok.start_column
             }
 
         elif tok.type == 'MNEMONIC':
@@ -57,16 +65,22 @@ class AssemblerParser:
                 "type": "instruction",
                  "mnemonic": tok.value,
                  "arguments": args,
-                 "line": tok.line
+                 "line": tok.line,
+                "column": tok.start_column
             }
 
         else:
             raise InvalidSyntaxError(
                 f"Unexpected token type {tok.type} with value {tok.value!r}",
-                line=tok.line
+                line=tok.line, column=tok.start_column
         )
 
     def parse(self) -> list[dict]:
+        """Parses all tokens into a complete program structure.
+
+        Returns:
+            List of dictionaries representing the parsed program with labels and instructions.
+        """
         program = []
         while self.pos < len(self.tokens):
             line = self.parse_line()

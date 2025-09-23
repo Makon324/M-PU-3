@@ -55,6 +55,9 @@ class InvalidAddressError(AssemblerError):
 class ValueOutOfRangeError(AssemblerError):
     """Raised when an invalid value is encountered in input."""
 
+class DuplicateLabelError(AssemblerError):
+    """Raised duplicate label is encountered in input."""
+
 class InstructionsError(AssemblerError):
     """Raised when error is encountered in instructions file."""
 

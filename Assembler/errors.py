@@ -58,8 +58,14 @@ class ValueOutOfRangeError(AssemblerError):
 class DuplicateLabelError(AssemblerError):
     """Raised duplicate label is encountered in input."""
 
-class InstructionsError(AssemblerError):
-    """Raised when error is encountered in instructions file."""
+class UndefinedLabelError(AssemblerError):
+    """Raised when an undefined label is encountered in input."""
 
+
+
+class InstructionsError(Exception):
+    """Raised when error is encountered in instructions file."""
+    def __init__(self, message):
+        super().__init__(message)
 
 

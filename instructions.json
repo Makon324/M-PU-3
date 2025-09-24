@@ -8,7 +8,7 @@
         "description": "Target address"
       }
     ],
-    "code": "001000A_________"
+    "code_template": "001000A_________"
   },
   {
     "mnemonic": "BRH",
@@ -17,14 +17,14 @@
       {
         "type": "num",
         "range": [0, 3],
-        "description": "Condition code (0: Z == 1, 1: Z == 0, 2: C == 1, 3: C == 0)"
+        "description": "Condition code_template (0: Z == 1, 1: Z == 0, 2: C == 1, 3: C == 0)"
       },
       {
         "type": "adr",
         "description": "Target address"
       }
     ],
-    "code": "0011N_A_________"
+    "code_template": "0011N_A_________"
   },
   {
     "mnemonic": "CAL",
@@ -35,7 +35,7 @@
         "description": "Subroutine address"
       }
     ],
-    "code": "010110A_________"
+    "code_template": "010110A_________"
   },
   {
     "mnemonic": "RET",
@@ -47,7 +47,7 @@
         "description": "Frame size"
       }
     ],
-    "code": "01100000N_______"
+    "code_template": "01100000N_______"
   },
   {
     "mnemonic": "PSH",
@@ -59,7 +59,7 @@
         "description": "Value to push"
       }
     ],
-    "code": "01000000N_______"
+    "code_template": "01000000N_______"
   },
   {
     "mnemonic": "PSHR",
@@ -70,7 +70,7 @@
         "description": "Register to push"
       }
     ],
-    "code": "01001R__00000000"
+    "code_template": "01001R__00000000"
   },
   {
     "mnemonic": "POP",
@@ -82,7 +82,7 @@
         "description": "Frame size"
       }
     ],
-    "code": "01111000N_______"
+    "code_template": "01111000N_______"
   },
   {
     "mnemonic": "MST",
@@ -95,14 +95,15 @@
       {
         "type": "num",
         "range": [0, 255],
-        "description": "Memory address"
+        "description": "Memory address",
+        "transformations": ["neq"]
       }
     ],
-    "code": "10000R__N_______"
+    "code_template": "10000R__N_______"
   },
   {
     "mnemonic": "MSP",
-    "description": "Memory Store Pointer (RA -> [RP - offset-1])",
+    "description": "Memory Store Pointer (RA -> [RP - offset - 1])",
     "operands": [
       {
         "type": "reg",
@@ -114,15 +115,15 @@
       },
       {
         "type": "num",
-        "range": [0, 31],
+        "range": [-16, 15],
         "description": "Offset"
       }
     ],
-    "code": "10001R__R__N____"
+    "code_template": "10001R__R__N____"
   },
   {
     "mnemonic": "MSS",
-    "description": "Memory Store Stack (RA -> [SP - adr-1])",
+    "description": "Memory Store Stack (RA -> [SP - adr - 1])",
     "operands": [
       {
         "type": "reg",
@@ -134,7 +135,7 @@
         "description": "Memory address (relative to stack)"
       }
     ],
-    "code": "10100R__N_______"
+    "code_template": "10100R__N_______"
   },
   {
     "mnemonic": "MSPS",
@@ -150,11 +151,11 @@
       },
       {
         "type": "num",
-        "range": [0, 31],
+        "range": [-16, 15],
         "description": "Offset"
       }
     ],
-    "code": "10110R__R__N____"
+    "code_template": "10110R__R__N____"
   },
   {
     "mnemonic": "MLD",
@@ -167,14 +168,15 @@
       {
         "type": "num",
         "range": [0, 255],
-        "description": "Memory address"
+        "description": "Memory address",
+        "transformations": ["neq"]
       }
     ],
-    "code": "10111R__N_______"
+    "code_template": "10111R__N_______"
   },
   {
     "mnemonic": "MLP",
-    "description": "Memory Load Pointer (RD <- [RP - offset-1])",
+    "description": "Memory Load Pointer (RD <- [RP - offset - 1])",
     "operands": [
       {
         "type": "reg",
@@ -186,11 +188,11 @@
       },
       {
         "type": "num",
-        "range": [0, 31],
+        "range": [-16, 15],
         "description": "Offset"
       }
     ],
-    "code": "11000R__R__N____"
+    "code_template": "11000R__R__N____"
   },
   {
     "mnemonic": "MLS",
@@ -206,7 +208,7 @@
         "description": "Memory address (relative to stack)"
       }
     ],
-    "code": "11001R__N_______"
+    "code_template": "11001R__N_______"
   },
   {
     "mnemonic": "MLPS",
@@ -222,11 +224,11 @@
       },
       {
         "type": "num",
-        "range": [0, 31],
+        "range": [-16, 15],
         "description": "Offset"
       }
     ],
-    "code": "11100R__R__N____"
+    "code_template": "11100R__R__N____"
   },
   {
     "mnemonic": "ADD",
@@ -245,7 +247,7 @@
         "description": "Second operand"
       }
     ],
-    "code": "11011R__R__R__00"
+    "code_template": "11011R__R__R__00"
   },
   {
     "mnemonic": "ADC",
@@ -264,7 +266,7 @@
         "description": "Second operand"
       }
     ],
-    "code": "11011R__R__R__01"
+    "code_template": "11011R__R__R__01"
   },
   {
     "mnemonic": "SUB",
@@ -283,7 +285,7 @@
         "description": "Second operand"
       }
     ],
-    "code": "11010R__R__R__00"
+    "code_template": "11010R__R__R__00"
   },
   {
     "mnemonic": "SUBC",
@@ -302,7 +304,7 @@
         "description": "Second operand"
       }
     ],
-    "code": "11010R__R__R__01"
+    "code_template": "11010R__R__R__01"
   },
   {
     "mnemonic": "ADI",
@@ -318,11 +320,11 @@
       },
       {
         "type": "num",
-        "range": [],
+        "range": [0, 31],
         "description": "Immediate value"
       }
     ],
-    "code": "11101R__R__N____"
+    "code_template": "11101R__R__N____"
   },
   {
     "mnemonic": "SUBI",
@@ -338,11 +340,11 @@
       },
       {
         "type": "num",
-        "range": [],
+        "range": [0, 31],
         "description": "Immediate value"
       }
     ],
-    "code": "11110R__R__N____"
+    "code_template": "11110R__R__N____"
   },
   {
     "mnemonic": "OR",
@@ -361,7 +363,7 @@
         "description": "Second operand"
       }
     ],
-    "code": "01101R__R__R__11"
+    "code_template": "01101R__R__R__11"
   },
   {
     "mnemonic": "AND",
@@ -380,7 +382,7 @@
         "description": "Second operand"
       }
     ],
-    "code": "01101R__R__R__10"
+    "code_template": "01101R__R__R__10"
   },
   {
     "mnemonic": "XOR",
@@ -399,7 +401,7 @@
         "description": "Second operand"
       }
     ],
-    "code": "01101R__R__R__01"
+    "code_template": "01101R__R__R__01"
   },
   {
     "mnemonic": "NOT",
@@ -414,7 +416,7 @@
         "description": "Source"
       }
     ],
-    "code": "01010R__R__00000"
+    "code_template": "01010R__R__00000"
   },
   {
     "mnemonic": "SHFT",
@@ -429,7 +431,7 @@
         "description": "Source"
       }
     ],
-    "code": "10010R__R__00000"
+    "code_template": "10010R__R__00000"
   },
   {
     "mnemonic": "SHFC",
@@ -444,7 +446,7 @@
         "description": "Source"
       }
     ],
-    "code": "10010R__R__00001"
+    "code_template": "10010R__R__00001"
   },
   {
     "mnemonic": "SHFE",
@@ -459,7 +461,7 @@
         "description": "Source"
       }
     ],
-    "code": "10011R__R__00000"
+    "code_template": "10011R__R__00000"
   },
   {
     "mnemonic": "SEX",
@@ -474,7 +476,7 @@
         "description": "Source"
       }
     ],
-    "code": "01110R__R__00000"
+    "code_template": "01110R__R__00000"
   },
   {
     "mnemonic": "MOVC",
@@ -491,10 +493,10 @@
       {
         "type": "num",
         "range": [0, 3],
-        "description": "Condition code (0: Z == 1, 1: Z == 0, 2: C == 1, 3: C == 0)"
+        "description": "Condition code_template (0: Z == 1, 1: Z == 0, 2: C == 1, 3: C == 0)"
       }
     ],
-    "code": "10101R__R__000N_"
+    "code_template": "10101R__R__000N_"
   },
   {
     "mnemonic": "PST",
@@ -510,7 +512,7 @@
         "description": "Port number"
       }
     ],
-    "code": "00010R__N_______"
+    "code_template": "00010R__N_______"
   },
   {
     "mnemonic": "DPS",
@@ -527,10 +529,11 @@
       {
         "type": "num",
         "range": [0, 63],
-        "description": "Port number"
+        "description": "Port number",
+        "transformations": ["div2"]
       }
     ],
-    "code": "00011R__R__N____"
+    "code_template": "00011R__R__N____"
   },
   {
     "mnemonic": "PLD",
@@ -546,7 +549,7 @@
         "description": "Port number"
       }
     ],
-    "code": "00001R__N_______"
+    "code_template": "00001R__N_______"
   },
   {
     "mnemonic": "LDI",
@@ -562,7 +565,7 @@
         "description": "Immediate value"
       }
     ],
-    "code": "00101R__N_______"
+    "code_template": "00101R__N_______"
   },
   {
     "mnemonic": "PSHM",
@@ -571,10 +574,11 @@
       {
         "type": "num",
         "range": [0, 255],
-        "description": "Amount"
+        "description": "Amount",
+        "transformations": ["neq", "dec"]
       }
     ],
-    "code": "01111000N_______"
+    "code_template": "01111000N_______"
   },
   {
     "mnemonic": "MOV",
@@ -589,18 +593,18 @@
         "description": "Source"
       }
     ],
-    "code": "11011R__R__00000"
+    "code_template": "11011R__R__00000"
   },
   {
     "mnemonic": "NOP",
     "description": "No-op",
     "operands": [],
-    "code": "0000000000000000"
+    "code_template": "0000000000000000"
   },
   {
     "mnemonic": "HLT",
     "description": "Halt",
     "operands": [],
-    "code": "1111100000000000"
+    "code_template": "1111100000000000"
   }
 ]

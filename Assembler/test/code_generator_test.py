@@ -295,6 +295,36 @@ def test_generate_code(mock_instructions):
     assert machine_code[2] == "0001000000000001"  # JMP loop (address 1)
 
 
+def test_program_too_long(mock_instructions):
+    """Test that program longer than 1024 instructions raises ProgramTooLongError"""
+    import random
+
+    program = []
+    line_num = 1
+
+    for i in range(1025):
+        # Randomly decide whether to add a label before this instruction
+        if random.random() < 0.15:  # 15% probability
+            program.append({
+                "type": "label",
+                "label": f"label_{i}",
+                "line": line_num
+            })
+            line_num += 1
+
+        # Add the instruction
+        program.append({
+            "type": "instruction",
+            "mnemonic": "MOV",
+            "arguments": make_tokens([("REGISTER", "R1"), ("DEC", "1")]),
+            "line": line_num
+        })
+        line_num += 1
+
+    generator = AssemblerCodeGenerator(program)
+
+    with pytest.raises(ProgramTooLongError, match="Program exceeds maximum size of 1024 instructions"):
+        generator.resolve_labels()
 
 
 

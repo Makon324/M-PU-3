@@ -61,6 +61,8 @@ class DuplicateLabelError(AssemblerError):
 class UndefinedLabelError(AssemblerError):
     """Raised when an undefined label is encountered in input."""
 
+class ProgramTooLongError(AssemblerError):
+    """Raised when the program exceeds 1024 instructions in length."""
 
 
 class InstructionsError(Exception):

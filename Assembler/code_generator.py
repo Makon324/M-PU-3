@@ -21,6 +21,11 @@ class AssemblerCodeGenerator:
                 self.symbol_table[line['label']] = address
             elif line['type'] == 'instruction':
                 address += 1
+                if address > 1024:
+                    raise ProgramTooLongError(
+                        f"Program exceeds maximum size of 1024 instructions (current: {address})",
+                        line['line']
+                    )
 
     @staticmethod
     def int_to_bin(number: int, n_bits: int) -> str:

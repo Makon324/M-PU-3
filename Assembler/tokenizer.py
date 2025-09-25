@@ -22,8 +22,7 @@ def make_token(token_type, value, line=1, column=1):
     return Token(type=token_type, value=value, line=line, start_column=column)
 
 def make_tokens(to_build: list[tuple]):
-    """
-    Helper to build tokens list:
+    """Helper to build tokens list:
     make_tokens(("MNEMONIC", "MOV", 1, 1), ("REGISTER", "R1", 1, 5))
     """
     tokens = []

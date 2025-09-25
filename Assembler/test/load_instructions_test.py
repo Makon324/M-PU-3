@@ -1,6 +1,8 @@
 import pytest
 from unittest.mock import patch, mock_open
-from load_instructions import *
+from pathlib import Path
+import json
+from load_instructions import load_instructions
 
 
 MOCK_INSTRUCTIONS = [
@@ -41,6 +43,10 @@ MOCK_INSTRUCTIONS = [
 SCRIPT_DIR = Path(__file__).parent
 TARGET_FILE = SCRIPT_DIR.parent.parent / "instructions.json"
 
+
+@pytest.fixture(autouse=True)
+def clear_caches():
+    load_instructions.cache_clear()
 
 @pytest.fixture
 def mock_instructions_file():

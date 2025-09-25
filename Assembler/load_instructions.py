@@ -1,7 +1,9 @@
 import json
 from pathlib import Path
+from functools import lru_cache
 
 
+@lru_cache(maxsize=1)
 def load_instructions(filename: str = "instructions.json") -> dict:
     """Searches for and loads instruction specifications from a JSON file.
 

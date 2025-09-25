@@ -69,7 +69,9 @@ class AssemblerCodeGenerator:
     def generate_instruction(self, instruction: dict) -> str:
         """Generate machine code for a single instruction."""
         mnemonic = instruction['mnemonic'].upper()
-        instruction_spec = self.instructions[mnemonic]
+        instruction_spec = self.instructions.get(mnemonic)
+        if not instruction_spec:
+            raise InvalidInstructionError(f"Unknown instruction: {mnemonic}")
         code_template = instruction_spec['code_template']
         binary_code = code_template
 

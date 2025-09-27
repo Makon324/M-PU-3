@@ -9,21 +9,7 @@ using System.Threading.Tasks;
 
 namespace Emulator
 {
-    internal class Token
-    {
-        public string Type { get; set; }
-        public string Value { get; set; }
-        public int Line { get; set; }
-        public int StartColumn { get; set; }
-
-        public Token(string type, string value, int line, int startColumn)
-        {
-            Type = type;
-            Value = value;
-            Line = line;
-            StartColumn = startColumn;
-        }
-    }
+    internal record Token(string Type, string Value, int Line, int StartColumn);
 
     internal enum StatementType
     {
@@ -36,38 +22,43 @@ namespace Emulator
     /// </summary>
     internal abstract class ProgramStatement
     {
-        public StatementType Type { get; set; }
-        public int Line { get; set; }
-        public int Column { get; set; }
+        public abstract StatementType Type { get; }
 
-        public ProgramStatement(int line, int column)
+        public int Line { get; }
+        public int Column { get; }
+
+        protected ProgramStatement(int line, int column)
         {
             Line = line;
             Column = column;
         }
     }
 
-    internal class LabelStatement : ProgramStatement
+    internal sealed class LabelStatement : ProgramStatement
     {
-        public string Label { get; set; }
+        public override StatementType Type => StatementType.LABEL;
+
+        public string Label { get; }
 
         public LabelStatement(string label, int line, int column) : base(line, column)
         {
-            Type = StatementType.LABEL;
-            Label = label;
+            Label = label ?? throw new ArgumentNullException(nameof(label));
         }
     }
 
-    internal class InstructionStatement : ProgramStatement
+    internal sealed class InstructionStatement : ProgramStatement
     {
-        public string Mnemonic { get; set; }
-        public List<Token> Arguments { get; set; }
+        public override StatementType Type => StatementType.INSTRUCTION;
 
-        public InstructionStatement(string mnemonic, int line, int column) : base(line, column)
+        public string Mnemonic { get; }
+        
+        public IReadOnlyList<Token> Arguments { get; }
+
+        public InstructionStatement(string mnemonic, IEnumerable<Token> arguments, int line, int column)
+            : base(line, column)
         {
-            Type = StatementType.INSTRUCTION;
-            Mnemonic = mnemonic;
-            Arguments = new List<Token>();            
+            Mnemonic = mnemonic ?? throw new ArgumentNullException(nameof(mnemonic));
+            Arguments = new List<Token>(arguments);
         }
     }
 
@@ -94,7 +85,7 @@ namespace Emulator
     /// Manages Python runtime initialization and cleanup.
     /// </summary>
     internal sealed class ProgramPythonTransformer : IDisposable
-    {
+    {        
         private bool _isInitializedHere = false;
 
         /// <summary>
@@ -111,28 +102,22 @@ namespace Emulator
             try
             {
                 assemblerPath = GetAssemblerPath();
-
-                AddToPythonPath(assemblerPath);
+                
                 InitializePython();
+                AddToPythonPath(assemblerPath);
 
                 using (Py.GIL())
                 {
-                    using (dynamic tokenizer = Py.Import("tokenizer"))
-                    using (dynamic parser = Py.Import("parser"))
-                    using (dynamic validator = Py.Import("validator"))
+                    using (var tokenizer = Py.Import("tokenizer"))
+                    using (var parser = Py.Import("parser"))
+                    using (var validator = Py.Import("validator"))
+                    using (var tokenizerInstance = tokenizer.InvokeMethod("AssemblerTokenizer"))
+                    using (var tokens = tokenizerInstance.InvokeMethod("tokenize", assemblyCode.ToPython()))
+                    using (var parserInstance = parser.InvokeMethod("AssemblerParser", tokens))
+                    using (var parsedProgram = parserInstance.InvokeMethod("parse"))
+                    using (var validatorInstance = validator.InvokeMethod("AssemblerValidator"))
                     {
-                        // Tokenize
-                        dynamic tokenizerInstance = tokenizer.AssemblerTokenizer();
-                        dynamic tokens = tokenizerInstance.tokenize(assemblyCode);
-
-                        // Parse
-                        dynamic parserInstance = parser.AssemblerParser(tokens);
-                        dynamic parsedProgram = parserInstance.parse();
-
-                        // Validate
-                        dynamic validatorInstance = validator.AssemblerValidator();
-                        validatorInstance.validate(parsedProgram);
-
+                        validatorInstance.InvokeMethod("validate", parsedProgram);
                         return ConvertPythonListOfDicts(parsedProgram);
                     }
                 }
@@ -140,6 +125,10 @@ namespace Emulator
             catch (PythonException ex)
             {
                 throw new ProgramLoadException(filePath, $"Python processing error: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new ProgramLoadException(filePath, $"Error transforming program: {ex.Message}", ex);
             }
         }
 
@@ -185,16 +174,6 @@ namespace Emulator
             return assemblerPath;
         }
 
-        private StatementType StringToStatementType(string type)
-        {
-            return type.ToLower() switch
-            {
-                "label" => StatementType.LABEL,
-                "instruction" => StatementType.INSTRUCTION,
-                _ => throw new ArgumentException($"Unknown statement type: {type}")
-            };
-        }
-
         /// <summary>
         /// Converts a dynamic Python list of dictionaries into a strongly-typed list of <see cref="ProgramStatement"/>.
         /// </summary>
@@ -222,24 +201,26 @@ namespace Emulator
                     result.Add(labelStmt);
                 }
                 else if (type == "instruction")
-                {
-                    var instructionStmt = new InstructionStatement(
-                        item.mnemonic.ToString(),
-                        int.Parse(item.line.ToString()),
-                        int.Parse(item.column.ToString())
-                    );
-
+                {                    
                     // Convert arguments (list of tokens)
+                    List<Token> arguments = new List<Token>();
                     foreach (dynamic arg in item.arguments)
                     {
                         var token = new Token(
                             arg.type.ToString(),
                             arg.value.ToString(),
-                            arg.line != null ? int.Parse(arg.line.ToString()) : 1,
-                            arg.start_column != null ? int.Parse(arg.start_column.ToString()) : 1
+                            int.Parse(arg.line.ToString()),
+                            int.Parse(arg.start_column.ToString())
                         );
-                        instructionStmt.Arguments.Add(token);
+                        arguments.Add(token);
                     }
+
+                    var instructionStmt = new InstructionStatement(
+                        item.mnemonic.ToString(),
+                        arguments,
+                        int.Parse(item.line.ToString()),
+                        int.Parse(item.column.ToString())
+                    );
 
                     result.Add(instructionStmt);
                 }
@@ -250,16 +231,15 @@ namespace Emulator
 
         private void AddToPythonPath(string path)
         {
-            string pythonPath = PythonEngine.PythonPath
-                    ?? Environment.GetEnvironmentVariable("PYTHONPATH")
-                    ?? "";
-
-            if (!pythonPath.Split(Path.PathSeparator).Contains(path))
+            using (Py.GIL())
             {
-                pythonPath += (pythonPath == "" ? path : $"{Path.PathSeparator}{path}");
-                PythonEngine.PythonPath = pythonPath;
-            }
+                dynamic sys = Py.Import("sys");
 
+                if (!sys.path.Contains(path))
+                {
+                    sys.path.insert(0, path);
+                }
+            }
         }
 
         private void InitializePython()
@@ -296,7 +276,7 @@ namespace Emulator
         /// <exception cref="FileNotFoundException">Thrown when the specified file does not exist.</exception>
         /// <exception cref="ProgramLoadException">Thrown when file reading, parsing, validation, or compilation fails.
         /// </exception>
-        public static (Dictionary<string, ushort> labels, List<InstructionStatement> program) LoadProgram(string path)
+        public static (IReadOnlyDictionary<string, ushort> labels, IReadOnlyList<InstructionStatement> program) LoadProgram(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("Path cannot be null or empty", nameof(path));
@@ -322,7 +302,7 @@ namespace Emulator
             }
             catch (Exception ex)
             {
-                throw new ProgramLoadException(path, $"Unexpected error loading program", ex);
+                throw new ProgramLoadException(path, $"Unexpected error loading program: {ex.Message}", ex);
             }
         }
 
@@ -338,7 +318,7 @@ namespace Emulator
         /// </returns>
         /// <exception cref="ProgramLoadException">
         /// Thrown when duplicate labels are found or when undefined labels are referenced.</exception>
-        private static (Dictionary<string, ushort> labels, List<InstructionStatement> program) CompileProgram(List<ProgramStatement> statements, string filePath /*just for exceptions*/)
+        private static (IReadOnlyDictionary<string, ushort> labels, IReadOnlyList<InstructionStatement> program) CompileProgram(List<ProgramStatement> statements, string filePath /*just for exceptions*/)
         {
             var labels = new Dictionary<string, ushort>();
             var program = new List<InstructionStatement>();
@@ -363,6 +343,11 @@ namespace Emulator
                     program.Add(instructionStatement);
                     currentAddress++;
                 }
+            }
+
+            if(program.Count > 1024)
+            {
+                throw new ProgramLoadException(filePath, $"Program exceeds 1024 instructions, found: {program.Count} instructions.");
             }
 
             // Validate that all referenced labels exist

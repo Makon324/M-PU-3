@@ -11,11 +11,12 @@ namespace Emulator
         private RegisterCollection _registers;
         private RAM _ram;
         private ushort _programCounter;
+        private byte _stackPointer;
         private bool _zeroFlag;
         private bool _carryFlag;
         private bool _halted;
-        private Dictionary<string, ushort> _labels;
-        private List<InstructionStatement> _program;
+        private IReadOnlyDictionary<string, ushort> _labels;
+        private IReadOnlyList<InstructionStatement> _program;
 
 
         public CPU(string programPath)
@@ -23,12 +24,25 @@ namespace Emulator
             _registers = new RegisterCollection();
             _ram = new RAM();
             _programCounter = 0;
+            _stackPointer = 0;
             _zeroFlag = false;
             _carryFlag = false;
             _halted = false;
 
             (_labels, _program) = ProgramLoader.LoadProgram(programPath);
         }
+
+        /// <summary>
+        /// Starts program execution
+        /// </summary>
+        public void Run()
+        {
+            while (!_halted)
+            {
+                ExecuteNextInstruction();
+            }
+        }
+
 
 
 

@@ -15,8 +15,8 @@ class Token:
     """
     type: str
     value: str
-    line: int = None
-    start_column: int = None
+    line: int
+    start_column: int
 
 def make_token(token_type, value, line=1, column=1):
     return Token(type=token_type, value=value, line=line, start_column=column)

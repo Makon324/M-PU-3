@@ -10,26 +10,28 @@ namespace Emulator
     {
         private RegisterCollection _registers;
         private RAM _ram;
-        private ushort _programCounter;
+        private ProgramCounter _programCounter;
         private byte _stackPointer;
         private bool _zeroFlag;
         private bool _carryFlag;
         private bool _halted;
         private IReadOnlyDictionary<string, ushort> _labels;
         private IReadOnlyList<InstructionStatement> _program;
+        private InstructionStatement[] _pipeline = new InstructionStatement[3];
 
 
-        public CPU(string programPath)
+        public CPU(IReadOnlyDictionary<string, ushort> labels, IReadOnlyList<InstructionStatement> program)
         {
             _registers = new RegisterCollection();
             _ram = new RAM();
-            _programCounter = 0;
+            _programCounter = new ProgramCounter(0);
             _stackPointer = 0;
             _zeroFlag = false;
             _carryFlag = false;
             _halted = false;
 
-            (_labels, _program) = ProgramLoader.LoadProgram(programPath);
+            _labels = labels;
+            _program = program;
         }
 
         /// <summary>
@@ -39,8 +41,13 @@ namespace Emulator
         {
             while (!_halted)
             {
-                ExecuteNextInstruction();
+                // execute instructions
             }
+        }
+
+        private InstructionStatement GetCurrentInstruction()
+        {
+            return _program[_programCounter.Value];
         }
 
 

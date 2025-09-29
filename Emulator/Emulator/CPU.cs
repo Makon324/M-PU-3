@@ -15,8 +15,8 @@ namespace Emulator
         private bool _zeroFlag;
         private bool _carryFlag;
         private bool _halted;
-        private IReadOnlyList<Instruction> _program;
-        private InstructionStatement[] _pipeline = new InstructionStatement[3];
+        private InstructionPipeline _pipeline;
+        private IReadOnlyList<Instruction> _program;        
 
 
         public CPU(IReadOnlyList<Instruction> program)
@@ -28,6 +28,7 @@ namespace Emulator
             _zeroFlag = false;
             _carryFlag = false;
             _halted = false;
+            _pipeline = new InstructionPipeline();
 
             _program = program;
         }

@@ -21,8 +21,7 @@ namespace Emulator
         /// </summary>
         /// <param name="path">The file path to the assembly program.</param>
         /// <returns>
-        /// A tuple containing:
-        /// Program in the for of a List of <see cref="Instruction">
+        /// Program in the form of a List of <see cref="Instruction">
         /// </returns>
         /// <exception cref="ArgumentException">Thrown when the path is null or empty.</exception>
         /// <exception cref="FileNotFoundException">Thrown when the specified file does not exist.</exception>
@@ -41,9 +40,9 @@ namespace Emulator
                 string assemblyCode = File.ReadAllText(path);
                 List<ProgramStatement> statements;
 
-                using (var transformer = new ProgramPythonTransformer())
+                using (var pythonTransformer = new ProgramPythonTransformer())
                 {
-                    statements = transformer.TransformProgram(assemblyCode, path);
+                    statements = pythonTransformer.TransformProgram(assemblyCode, path);
                 }
 
                 var (labels, instructionStatements) = ProgramCompiler.ResolveLabels(statements, path);
@@ -93,7 +92,7 @@ namespace Emulator
             }
 
             throw new DirectoryNotFoundException(
-                "Solution root not found, looking for .git folder.");
+                "Solution root not found looking for .git folder.");
         }
     }
 

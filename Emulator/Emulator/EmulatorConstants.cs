@@ -21,8 +21,8 @@ namespace Emulator
     {
         public const string INSTRUCTIONS_FILE = "Instructions.json";
         public const string PYTHON_ASSEMBLER = "Assembler";
-        public const string PYTHON_TOKENIZER = PYTHON_ASSEMBLER + "Tokenizer.py";
-        public const string PYTHON_PARSER = PYTHON_ASSEMBLER + "Parser.py";
-        public const string PYTHON_VALIDATOR = PYTHON_ASSEMBLER + "Validator.py";
+        public const string PYTHON_TOKENIZER = PYTHON_ASSEMBLER + "/Tokenizer.py";
+        public const string PYTHON_PARSER = PYTHON_ASSEMBLER + "/Parser.py";
+        public const string PYTHON_VALIDATOR = PYTHON_ASSEMBLER + "/Validator.py";
     }
 }

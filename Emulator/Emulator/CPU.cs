@@ -11,11 +11,11 @@ namespace Emulator
         private RegisterCollection _registers;
         private RAM _ram;
         private ProgramCounter _programCounter;
+        private InstructionPipeline _pipeline;
         private byte _stackPointer;
         private bool _zeroFlag;
         private bool _carryFlag;
-        private bool _halted;
-        private InstructionPipeline _pipeline;
+        private bool _halted;        
         private IReadOnlyList<Instruction> _program;        
 
 
@@ -24,11 +24,11 @@ namespace Emulator
             _registers = new RegisterCollection();
             _ram = new RAM();
             _programCounter = new ProgramCounter(0);
+            _pipeline = new InstructionPipeline();
             _stackPointer = 0;
             _zeroFlag = false;
             _carryFlag = false;
-            _halted = false;
-            _pipeline = new InstructionPipeline();
+            _halted = false;            
 
             _program = program;
         }
@@ -44,10 +44,7 @@ namespace Emulator
             }
         }
 
-        private InstructionStatement GetCurrentInstruction()
-        {
-            return _program[_programCounter.Value];
-        }
+        
 
 
 

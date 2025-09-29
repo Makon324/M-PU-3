@@ -9,33 +9,41 @@ namespace Emulator
     /// <summary>
     /// Emulates program counter and call stack behavior.
     /// </summary>
-    internal sealed class ProgramCounter
+    internal sealed class ProgramCounter (ushort address = 0)
     {
-        private ushort _programCounter;
+        private ushort _programCounter = address;
 
-        private Stack<ushort> _callStack = new Stack<ushort>();
+        private Stack<ushort> _callStack = new();
 
-        public ProgramCounter(ushort address = 0)
-        {
-            _programCounter = address;
-        }
         public ushort Value
         {
             get => _programCounter;
             set => _programCounter = value;
         }
+
         public void Increment()
         {
             _programCounter++;
+
+            if (_programCounter >= Architecture.MAX_PROGRAM_SIZE)
+                throw new InvalidOperationException("Program counter overflow.");
         }
 
         public void SetBRH(ushort address)
         {
+            if (address >= Architecture.MAX_PROGRAM_SIZE)
+                throw new ArgumentOutOfRangeException(nameof(address), "Address is out of bounds.");
+
             _programCounter = address;
         }
 
         public void PushJMP(ushort adress)
         {
+            if (adress >= Architecture.MAX_PROGRAM_SIZE)
+                throw new ArgumentOutOfRangeException(nameof(adress), "Address is out of bounds.");
+            if (_programCounter + 1 >= Architecture.MAX_PROGRAM_SIZE)
+                throw new InvalidOperationException("Cant push invalid adress onto stack.");
+
             _callStack.Push((ushort)(_programCounter + 1));
             _programCounter = adress;
         }

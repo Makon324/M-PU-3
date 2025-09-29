@@ -15,12 +15,11 @@ namespace Emulator
         private bool _zeroFlag;
         private bool _carryFlag;
         private bool _halted;
-        private IReadOnlyDictionary<string, ushort> _labels;
-        private IReadOnlyList<InstructionStatement> _program;
+        private IReadOnlyList<Instruction> _program;
         private InstructionStatement[] _pipeline = new InstructionStatement[3];
 
 
-        public CPU(IReadOnlyDictionary<string, ushort> labels, IReadOnlyList<InstructionStatement> program)
+        public CPU(IReadOnlyList<Instruction> program)
         {
             _registers = new RegisterCollection();
             _ram = new RAM();
@@ -30,7 +29,6 @@ namespace Emulator
             _carryFlag = false;
             _halted = false;
 
-            _labels = labels;
             _program = program;
         }
 

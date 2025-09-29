@@ -1,16 +1,103 @@
 ﻿using Python.Runtime;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Emulator
 {
-    internal record Token(string Type, string Value, int Line, int StartColumn);
+    internal static class ProgramLoader
+    {
+        /// <summary>
+        /// Takes a path to an assembly program file, reads its content, transforms it using parts of Python Assembler, resolves labels, 
+        /// and generates a list of instructions in the form of <see cref="InstructionStatement">.
+        /// </summary>
+        /// <param name="path">The file path to the assembly program.</param>
+        /// <returns>
+        /// A tuple containing:
+        /// Program in the for of a List of <see cref="Instruction">
+        /// </returns>
+        /// <exception cref="ArgumentException">Thrown when the path is null or empty.</exception>
+        /// <exception cref="FileNotFoundException">Thrown when the specified file does not exist.</exception>
+        /// <exception cref="ProgramLoadException">Thrown when file reading, parsing, validation, or compilation fails.
+        /// </exception>
+        public static IReadOnlyList<Instruction> LoadProgram(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentException("Path cannot be null or empty", nameof(path));
 
+            if (!File.Exists(path))
+                throw new FileNotFoundException($"Assembly file not found: {Path.GetFileName(path)}", path);
+
+            try
+            {
+                string assemblyCode = File.ReadAllText(path);
+                List<ProgramStatement> statements;
+
+                using (var transformer = new ProgramPythonTransformer())
+                {
+                    statements = transformer.TransformProgram(assemblyCode, path);
+                }
+
+                var (labels, instructionStatements) = ProgramCompiler.ResolveLabels(statements, path);
+                var program = ProgramCompiler.CompileProgram(labels, instructionStatements);
+                return program;
+            }
+            catch (ProgramLoadException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new ProgramLoadException(path, $"Unexpected error loading program: {ex.Message}", ex);
+            }
+        }
+    }
+
+    internal static class ProjectPathResolver
+    {
+        /// <summary>
+        /// Finds the solution root directory by looking for .git folder
+        /// </summary>
+        /// <returns>The full path to the solution root directory</returns>
+        /// <exception cref="DirectoryNotFoundException">Thrown when solution root cannot be found</exception>
+        public static string FindSolutionRoot()
+        {
+            // Start from the current assembly's location
+            var assemblyLocation = Assembly.GetExecutingAssembly().Location;
+            var startDirectory = Path.GetDirectoryName(assemblyLocation);
+
+            if (string.IsNullOrEmpty(startDirectory))
+            {
+                throw new DirectoryNotFoundException("Could not determine assembly directory");
+            }
+
+            var directory = new DirectoryInfo(startDirectory);
+
+            // Traverse up until we find .git
+            while (directory != null)
+            {
+                if (directory.GetDirectories(".git").Any())
+                {
+                    return directory.FullName;
+                }
+
+                directory = directory.Parent;
+            }
+
+            throw new DirectoryNotFoundException(
+                "Solution root not found, looking for .git folder.");
+        }
+    }
+
+    internal record Token(string Type, string Value, int Line, int StartColumn);
     internal enum StatementType
     {
         LABEL,
@@ -19,47 +106,31 @@ namespace Emulator
 
     /// <summary>
     /// Abstract base class representing a statement in an assembly program.
+    /// Used only during program loading and transformation.
     /// </summary>
-    internal abstract class ProgramStatement
+    internal abstract class ProgramStatement(int line, int column)
     {
         public abstract StatementType Type { get; }
 
-        public int Line { get; }
-        public int Column { get; }
-
-        protected ProgramStatement(int line, int column)
-        {
-            Line = line;
-            Column = column;
-        }
+        public int Line { get; } = line;
+        public int Column { get; } = column;
     }
 
-    internal sealed class LabelStatement : ProgramStatement
+    internal sealed class LabelStatement(string label, int line, int column)
+        : ProgramStatement(line, column)
     {
         public override StatementType Type => StatementType.LABEL;
 
-        public string Label { get; }
-
-        public LabelStatement(string label, int line, int column) : base(line, column)
-        {
-            Label = label ?? throw new ArgumentNullException(nameof(label));
-        }
+        public string Label { get; } = label ?? throw new ArgumentNullException(nameof(label));
     }
 
-    internal sealed class InstructionStatement : ProgramStatement
+    internal sealed class InstructionStatement(string mnemonic, IEnumerable<Token> arguments, int line, int column)
+        : ProgramStatement(line, column)
     {
         public override StatementType Type => StatementType.INSTRUCTION;
 
-        public string Mnemonic { get; }
-        
-        public IReadOnlyList<Token> Arguments { get; }
-
-        public InstructionStatement(string mnemonic, IEnumerable<Token> arguments, int line, int column)
-            : base(line, column)
-        {
-            Mnemonic = mnemonic ?? throw new ArgumentNullException(nameof(mnemonic));
-            Arguments = new List<Token>(arguments);
-        }
+        public string Mnemonic { get; } = mnemonic ?? throw new ArgumentNullException(nameof(mnemonic));
+        public IReadOnlyList<Token> Arguments { get; } = new List<Token>(arguments);
     }
 
     /// <summary>
@@ -97,20 +168,22 @@ namespace Emulator
         /// <exception cref="ProgramLoadException">Thrown when transformation fails due to parsing, validation, or other errors.</exception>
         public List<ProgramStatement> TransformProgram(string assemblyCode, string filePath /*just for exceptions*/)
         {           
-            string? assemblerPath = null;
-
             try
             {
-                assemblerPath = GetAssemblerPath();
-                
+                string rootPath = ProjectPathResolver.FindSolutionRoot();
+                string assemblerPath = Path.Combine(rootPath, Paths.PYTHON_ASSEMBLER);
+                string tokenizerPath = Path.Combine(rootPath, Paths.PYTHON_TOKENIZER);
+                string parserPath = Path.Combine(rootPath, Paths.PYTHON_PARSER);
+                string validatorPath = Path.Combine(rootPath, Paths.PYTHON_VALIDATOR);
+
                 InitializePython();
                 AddToPythonPath(assemblerPath);
 
                 using (Py.GIL())
                 {
-                    using (var tokenizer = Py.Import("tokenizer"))
-                    using (var parser = Py.Import("parser"))
-                    using (var validator = Py.Import("validator"))
+                    using (var tokenizer = Py.Import(tokenizerPath))
+                    using (var parser = Py.Import(parserPath))
+                    using (var validator = Py.Import(validatorPath))
                     using (var tokenizerInstance = tokenizer.InvokeMethod("AssemblerTokenizer"))
                     using (var tokens = tokenizerInstance.InvokeMethod("tokenize", assemblyCode.ToPython()))
                     using (var parserInstance = parser.InvokeMethod("AssemblerParser", tokens))
@@ -130,48 +203,6 @@ namespace Emulator
             {
                 throw new ProgramLoadException(filePath, $"Error transforming program: {ex.Message}", ex);
             }
-        }
-
-        /// <summary>
-        /// Resolves the path to the "Assembler" directory.
-        /// </summary>
-        /// <remarks>This method starts from the application's base directory and navigates up four
-        /// directory levels to locate the "Assembler" directory. If the base directory is not resolvable, or if the
-        /// "Assembler" directory does not exist at the expected location, an exception is thrown.</remarks>
-        /// <returns>The full path to the "Assembler" directory.</returns>
-        /// <exception cref="DirectoryNotFoundException"> Thrown when the base directory cannot be resolved, parent 
-        /// directories are missing, or the Assembler directory is not found at the expected location.
-        /// </exception>
-        private string GetAssemblerPath()
-        {
-            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            if (string.IsNullOrEmpty(baseDir))
-            {
-                throw new DirectoryNotFoundException("Base directory could not be resolved.");
-            }
-
-            // Walk up 4 levels
-            DirectoryInfo? dirInfo = new DirectoryInfo(baseDir);
-            for (int i = 0; i < 4; i++)
-            {
-                if (dirInfo?.Parent == null)
-                {
-                    throw new DirectoryNotFoundException(
-                        $"Could not find a parent directory {i + 1} levels above {baseDir}"
-                    );
-                }
-                dirInfo = dirInfo.Parent;
-            }
-
-            string assemblerPath = Path.Combine(dirInfo.FullName, "Assembler");
-            if (!Directory.Exists(assemblerPath))
-            {
-                throw new DirectoryNotFoundException(
-                    $"Directory not found at: {assemblerPath}"
-                );
-            }
-
-            return assemblerPath;
         }
 
         /// <summary>
@@ -203,7 +234,7 @@ namespace Emulator
                 else if (type == "instruction")
                 {                    
                     // Convert arguments (list of tokens)
-                    List<Token> arguments = new List<Token>();
+                    List<Token> arguments = new();
                     foreach (dynamic arg in item.arguments)
                     {
                         var token = new Token(
@@ -229,7 +260,7 @@ namespace Emulator
             return result;
         }
 
-        private void AddToPythonPath(string path)
+        private static void AddToPythonPath(string path)
         {
             using (Py.GIL())
             {
@@ -260,52 +291,8 @@ namespace Emulator
         }
     }
 
-    internal static class ProgramLoader
+    internal sealed class ProgramCompiler
     {
-        /// <summary>
-        /// Takes a path to an assembly program file, reads its content, transforms it using parts of Python Assembler, resolves labels, 
-        /// and generates a list of instructions in the form of <see cref="InstructionStatement">.
-        /// </summary>
-        /// <param name="path">The file path to the assembly program.</param>
-        /// <returns>
-        /// A tuple containing:
-        /// - labels: Dictionary mapping label names to their memory addresses
-        /// - program: List of instruction statements
-        /// </returns>
-        /// <exception cref="ArgumentException">Thrown when the path is null or empty.</exception>
-        /// <exception cref="FileNotFoundException">Thrown when the specified file does not exist.</exception>
-        /// <exception cref="ProgramLoadException">Thrown when file reading, parsing, validation, or compilation fails.
-        /// </exception>
-        public static (IReadOnlyDictionary<string, ushort> labels, IReadOnlyList<InstructionStatement> program) LoadProgram(string path)
-        {
-            if (string.IsNullOrWhiteSpace(path))
-                throw new ArgumentException("Path cannot be null or empty", nameof(path));
-
-            if (!File.Exists(path))
-                throw new FileNotFoundException($"Assembly file not found: {Path.GetFileName(path)}", path);
-
-            try
-            {
-                string assemblyCode = File.ReadAllText(path);
-                List<ProgramStatement> statements;
-
-                using (var transformer = new ProgramPythonTransformer())
-                {
-                    statements = transformer.TransformProgram(assemblyCode, path);
-                }
-
-                return CompileProgram(statements, path);
-            }
-            catch (ProgramLoadException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new ProgramLoadException(path, $"Unexpected error loading program: {ex.Message}", ex);
-            }
-        }
-
         /// <summary>
         /// Compiles a list of <see cref="ProgramStatement"/> into a symbol table of labels and a list of instructions.
         /// </summary>
@@ -318,10 +305,16 @@ namespace Emulator
         /// </returns>
         /// <exception cref="ProgramLoadException">
         /// Thrown when duplicate labels are found or when undefined labels are referenced.</exception>
-        private static (IReadOnlyDictionary<string, ushort> labels, IReadOnlyList<InstructionStatement> program) CompileProgram(List<ProgramStatement> statements, string filePath /*just for exceptions*/)
+        public static (
+            IReadOnlyDictionary<string, ushort> labels,
+            IReadOnlyList<InstructionStatement> program
+        ) ResolveLabels(
+            List<ProgramStatement> statements,
+            string filePath // just for exceptions
+        )
         {
             var labels = new Dictionary<string, ushort>();
-            var program = new List<InstructionStatement>();
+            var instructionStatements = new List<InstructionStatement>();
             ushort currentAddress = 0;
 
             // Build symbol table and program list
@@ -329,47 +322,126 @@ namespace Emulator
             {
                 if (statement is LabelStatement labelStatement)
                 {
-                    if (!labels.ContainsKey(labelStatement.Label))
-                    {
-                        labels.Add(labelStatement.Label, currentAddress);
-                    }
-                    else
-                    {
+                    if(!labels.TryAdd(labelStatement.Label, currentAddress))
                         throw new ProgramLoadException(filePath, $"Duplicate label '{labelStatement.Label}' at line {labelStatement.Line}");
-                    }
                 }
                 else if (statement is InstructionStatement instructionStatement)
                 {
-                    program.Add(instructionStatement);
+                    instructionStatements.Add(instructionStatement);
                     currentAddress++;
                 }
             }
 
-            if(program.Count > 1024)
+            if (instructionStatements.Count > 1024)
             {
-                throw new ProgramLoadException(filePath, $"Program exceeds 1024 instructions, found: {program.Count} instructions.");
+                throw new ProgramLoadException(filePath, $"Program exceeds 1024 instructions, found: {instructionStatements.Count} instructions.");
             }
 
-            // Validate that all referenced labels exist
-            foreach (var instruction in program)
-            {
-                foreach (var token in instruction.Arguments)
-                {
-                    if (token.Type == "LABEL" && !labels.ContainsKey(token.Value))
-                    {
-                        throw new ProgramLoadException(filePath, 
-                            $"Undefined label '{token.Value}' at line {instruction.Line}, column {instruction.Column}");
-                    }
-                }
-            }
-
-            return (labels, program);
+            return (labels, instructionStatements);
         }
 
 
+        /// <summary>
+        /// Compiles a list of InstructionStatements and Labels into List of <see cref="Instruction">
+        /// </summary>
+        public static IReadOnlyList<Instruction> CompileProgram(
+            IReadOnlyDictionary<string, ushort> labels, 
+            IReadOnlyList<InstructionStatement> instructionStatements)
+        {
+            var compiledProgram = new List<Instruction>();
 
+            var argumentSpecifications = LoadArgumentsSpecification();
 
+            foreach (var instructionStatement in instructionStatements)
+            {
+                string mnemonic = instructionStatement.Mnemonic;
+                var argumentsSpec = argumentSpecifications[mnemonic];
+                var arguments_ = instructionStatement.Arguments;
+                var arguments = new List<Argument>();
 
+                foreach (var (token, spec) in arguments_.Zip(argumentsSpec))
+                {
+                    arguments.Add(TokenToArgument(token, spec, labels));
+                }
 
+                compiledProgram.Add(new Instruction(instructionStatement.Mnemonic, arguments));
+            }
+
+            return compiledProgram;
+        }
+
+        private static Argument TokenToArgument(Token token, string specification, IReadOnlyDictionary<string, ushort> labels)
+        {
+            switch (specification)
+            {
+                case "reg":
+                    return new RegisterArgument(byte.Parse(token.Value.AsSpan(1)));
+                case "num":
+                    return new NumberArgument((byte)NumParse(token.Value));
+                case "adr":
+                    if(token.Type == "IDENT")
+                    {
+                        return new AddressArgument(labels[token.Value]);
+                    }
+                    else
+                    {
+                        return new AddressArgument((ushort)NumParse(token.Value));
+                    }
+                default:
+                    throw new InvalidOperationException($"Unknown argument specification: {specification}");
+            }
+        }
+
+        /// <summary>
+        /// Parses a string representing an integer in binary, hexadecimal, or decimal format.
+        /// </summary>
+        private static int NumParse(string input)
+        {
+            if (input.StartsWith("0b", StringComparison.OrdinalIgnoreCase))
+            {
+                // Binary
+                return Convert.ToInt32(input[2..], 2);
+            }
+            else if (input.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            {
+                // Hex
+                return int.Parse(input.AsSpan(2), NumberStyles.HexNumber);
+            }
+            else
+            {
+                // Decimal (default)
+                return int.Parse(input, NumberStyles.Integer);
+            }
+        }
+
+        /// <summary>
+        /// Loads instruction argument specifications from a JSON file into a dictionary.
+        /// </summary>
+        public static IReadOnlyDictionary<string, List<string>> LoadArgumentsSpecification()
+        {
+            string jsonPath = Path.Combine(ProjectPathResolver.FindSolutionRoot(), Paths.INSTRUCTIONS_FILE);
+
+            if(!File.Exists(jsonPath))
+                throw new FileNotFoundException($"Instructions specification file not found: {jsonPath}", jsonPath);
+
+            var jsonText = File.ReadAllText(jsonPath, Encoding.UTF8);
+
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var instructions = JsonSerializer.Deserialize<List<Instr>>(jsonText, options)
+                ?? throw new InvalidOperationException($"Failed to deserialize instructions from '{jsonPath}'.");
+
+            var dict = instructions
+                .ToDictionary(
+                    instr => instr.Mnemonic,
+                    instr => instr.Operands?.Select(op => op.Type).ToList() ?? new List<string>()
+                );
+            return dict;
+        }
+
+        // records just for deserializing instructions.json
+        internal record Operd(string Type);
+        internal record Instr(string Mnemonic, List<Operd> Operands);
     }
+
+
 }

@@ -12,7 +12,7 @@ namespace Emulator
     /// <remarks>Pipeline size should remain <see cref="Architecture.INSTRUCTION_PIPELINE_SIZE"> at all times.</remarks>
     internal class InstructionPipeline
     {
-        private Queue<Instruction> _pipeline;
+        private readonly Queue<Instruction> _pipeline;
 
         public InstructionPipeline()
         {

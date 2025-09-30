@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 namespace Emulator
 {
     /// <summary>
-    /// Represents a collection of CPU registers where register 0 ignores all writea and always reads 0.
+    /// Represents a collection of CPU registers where register 0 ignores all writes and always reads 0.
     /// </summary>
     internal sealed class RegisterCollection
     {
-        private byte[] _backing;
+        private readonly byte[] _backing;
 
         public RegisterCollection()
         {

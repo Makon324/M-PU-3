@@ -219,7 +219,7 @@ namespace Emulator
         /// <param name="pythonList">A dynamic list of dictionaries, where each dictionary represents a program statement with properties such as
         /// type, label, mnemonic, and arguments.</param>
         /// <returns>A list of <see cref="ProgramStatement"/> objects representing the converted program statements.</returns>
-        private List<ProgramStatement> ConvertPythonListOfDicts(dynamic pythonList)
+        private static List<ProgramStatement> ConvertPythonListOfDicts(dynamic pythonList)
         {
             var result = new List<ProgramStatement>();
 

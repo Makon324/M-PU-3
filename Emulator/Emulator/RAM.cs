@@ -11,7 +11,7 @@ namespace Emulator
     /// </summary>
     internal sealed class RAM
     {
-        private byte[] _backing;
+        private readonly byte[] _backing;
 
         public RAM()
         {

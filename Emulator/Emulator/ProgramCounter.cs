@@ -13,7 +13,7 @@ namespace Emulator
     {
         private ushort _programCounter = address;
 
-        private Stack<ushort> _callStack = new();
+        private readonly Stack<ushort> _callStack = new();
 
         public ushort Value
         {
@@ -37,15 +37,15 @@ namespace Emulator
             _programCounter = address;
         }
 
-        public void PushJMP(ushort adress)
+        public void PushJMP(ushort address)
         {
-            if (adress >= Architecture.MAX_PROGRAM_SIZE)
-                throw new ArgumentOutOfRangeException(nameof(adress), "Address is out of bounds.");
+            if (address >= Architecture.MAX_PROGRAM_SIZE)
+                throw new ArgumentOutOfRangeException(nameof(address), "Address is out of bounds.");
             if (_programCounter + 1 >= Architecture.MAX_PROGRAM_SIZE)
                 throw new InvalidOperationException("Cant push invalid adress onto stack.");
 
             _callStack.Push((ushort)(_programCounter + 1));
-            _programCounter = adress;
+            _programCounter = address;
         }
 
         public void PopRET()

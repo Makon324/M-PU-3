@@ -16,7 +16,7 @@ namespace Emulator
         private bool _zeroFlag;
         private bool _carryFlag;
         private bool _halted;
-        private IReadOnlyList<Instruction> _program;
+        private readonly IReadOnlyList<Instruction> _program;
 
 
         public CPU(IReadOnlyList<Instruction> program)
@@ -62,7 +62,7 @@ namespace Emulator
             return _program[_programCounter.Value];
         }
 
-        private bool RequiresPipelineFlush(Instruction instruction)
+        private static bool RequiresPipelineFlush(Instruction instruction)
         {
             return Architecture.INSTRUCTIONS_THAT_FLUSH_PIPELINE.Contains(instruction.Mnemonic);
         }

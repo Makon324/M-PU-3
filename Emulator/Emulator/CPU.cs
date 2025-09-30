@@ -59,6 +59,9 @@ namespace Emulator
 
         private Instruction FetchInstruction()
         {
+            if (_programCounter.Value >= _program.Count)
+                throw new InvalidOperationException("Program counter beyond loaded program");
+
             return _program[_programCounter.Value];
         }
 

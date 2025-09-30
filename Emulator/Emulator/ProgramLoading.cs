@@ -69,7 +69,7 @@ namespace Emulator
         /// <exception cref="DirectoryNotFoundException">Thrown when solution root cannot be found</exception>
         public static string FindSolutionRoot()
         {
-            if (cache != null) return cache;
+            if (_cache != null) return _cache;
 
             // Start from the current assembly's location
             var assemblyLocation = Assembly.GetExecutingAssembly().Location;
@@ -87,7 +87,7 @@ namespace Emulator
             {
                 if (directory.GetDirectories(".git").Any())
                 {
-                    cache = directory.FullName;
+                    _cache = directory.FullName;
                     return directory.FullName;
                 }
 
@@ -98,7 +98,7 @@ namespace Emulator
                 "Solution root not found looking for .git folder.");
         }
 
-        private static string? cache = null;
+        private static string? _cache = null;
     }
 
     internal record Token(string Type, string Value, int Line, int StartColumn);
@@ -338,9 +338,9 @@ namespace Emulator
                 }
             }
 
-            if (instructionStatements.Count > 1024)
+            if (instructionStatements.Count > Architecture.MAX_PROGRAM_SIZE)
             {
-                throw new ProgramLoadException(filePath, $"Program exceeds 1024 instructions, found: {instructionStatements.Count} instructions.");
+                throw new ProgramLoadException(filePath, $"Program exceeds {Architecture.MAX_PROGRAM_SIZE} instructions, found: {instructionStatements.Count} instructions.");
             }
 
             return (labels, instructionStatements);

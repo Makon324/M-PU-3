@@ -20,7 +20,7 @@ namespace Emulator
 
             for (int i = 0; i < Architecture.INSTRUCTION_PIPELINE_SIZE; i++)
             {
-                _pipeline.Enqueue(GetNOP());
+                _pipeline.Enqueue(new Instruction("NOP"));
             }
         }
 
@@ -31,11 +31,6 @@ namespace Emulator
         {
             _pipeline.Enqueue(nextInstruction);
             return _pipeline.Dequeue();
-        }
-
-        private Instruction GetNOP()
-        {
-            return new Instruction("NOP", Array.Empty<Argument>());
         }
     }
 }

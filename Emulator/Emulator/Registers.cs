@@ -11,25 +11,30 @@ namespace Emulator
     /// </summary>
     internal sealed class RegisterCollection
     {
-        public const int RegisterCount = 8;
-
         private byte[] _backing;
 
         public RegisterCollection()
         {
-            _backing = new byte[RegisterCount];
+            _backing = new byte[Architecture.REGISTER_COUNT];
         }
 
         public byte this[byte index]
         {
             get
             {
-                if (index >= _backing.Length) throw new ArgumentOutOfRangeException(nameof(index));
+                if (index >= Architecture.REGISTER_COUNT) 
+                    throw new ArgumentOutOfRangeException(nameof(index),
+                        $"Index {index} is beyond register count {Architecture.REGISTER_COUNT}");
+
                 return index == 0 ? (byte)0 : _backing[index];
             }
             set
             {
-                if (index >= _backing.Length) throw new ArgumentOutOfRangeException(nameof(index));
+                if (index >= _backing.Length) 
+                    throw new ArgumentOutOfRangeException(nameof(index),
+                        $"Index {index} is beyond register count {Architecture.REGISTER_COUNT}");
+
+
                 if (index == 0) return; // ignore writes to R0
                 _backing[index] = value;
             }

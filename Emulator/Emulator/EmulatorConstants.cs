@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,6 +13,8 @@ namespace Emulator
         public const int RAM_SIZE = 256;
         public const int MAX_PROGRAM_SIZE = 1024;
         public const int INSTRUCTION_PIPELINE_SIZE = 3;
+
+        public static readonly ImmutableHashSet<string> INSTRUCTIONS_THAT_FLUSH_PIPELINE = ImmutableHashSet.Create("JMP", "BRH", "CAL", "RET");
     }
 
     /// <summary>

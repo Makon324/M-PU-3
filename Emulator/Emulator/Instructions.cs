@@ -36,9 +36,15 @@ namespace Emulator
         public ushort Value { get; } = value;
     }
 
-    internal sealed class Instruction(string mnemonic, IEnumerable<Argument> arguments)
+    internal sealed class Instruction
     {
-        public string Mnemonic { get; } = mnemonic;
-        public IReadOnlyList<Argument> Arguments { get; } = new List<Argument>(arguments);
+        public string Mnemonic { get; }
+        public IReadOnlyList<Argument> Arguments { get; }
+
+        public Instruction(string mnemonic, IEnumerable<Argument>? arguments = null)
+        {
+            Mnemonic = mnemonic;
+            Arguments = new List<Argument>(arguments ?? Array.Empty<Argument>());
+        }
     }
 }

@@ -11,25 +11,29 @@ namespace Emulator
     /// </summary>
     internal sealed class RAM
     {
-        public const int MemoryCapacity = 256;
-
         private byte[] _backing;
 
         public RAM()
         {
-            _backing = new byte[MemoryCapacity];
+            _backing = new byte[Architecture.RAM_SIZE];
         }
 
         public byte this[byte index]
         {
             get
             {
-                if (index >= _backing.Length) throw new ArgumentOutOfRangeException(nameof(index));
+                if (index >= _backing.Length) 
+                    throw new ArgumentOutOfRangeException(nameof(index), 
+                        $"Index {index} is beyond memory capacity {Architecture.RAM_SIZE}");
+
                 return _backing[index];
             }
             set
             {
-                if (index >= _backing.Length) throw new ArgumentOutOfRangeException(nameof(index));
+                if (index >= _backing.Length)
+                    throw new ArgumentOutOfRangeException(nameof(index), 
+                        $"Index {index} is beyond memory capacity {Architecture.RAM_SIZE}");
+
                 _backing[index] = value;
             }
         }

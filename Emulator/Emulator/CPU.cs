@@ -15,8 +15,8 @@ namespace Emulator
         private byte _stackPointer;
         private bool _zeroFlag;
         private bool _carryFlag;
-        private bool _halted;        
-        private IReadOnlyList<Instruction> _program;        
+        private bool _halted;
+        private IReadOnlyList<Instruction> _program;
 
 
         public CPU(IReadOnlyList<Instruction> program)
@@ -28,23 +28,79 @@ namespace Emulator
             _stackPointer = 0;
             _zeroFlag = false;
             _carryFlag = false;
-            _halted = false;            
+            _halted = false;
 
             _program = program;
         }
 
         /// <summary>
-        /// Starts program execution
+        /// Starts program execution, advancing the instruction pipeline and executing instructions until a HALT instruction is encountered.
         /// </summary>
         public void Run()
         {
             while (!_halted)
             {
-                // execute instructions
+                Instruction nextInstruction = FetchInstruction();
+
+                if (RequiresPipelineFlush(nextInstruction))
+                {
+                    ExecutePipelineInstruction(nextInstruction, advancePC: false);
+
+                    FlushPipelineWithNops();
+
+                    ExecutePipelineInstruction(new Instruction("NOP"), advancePC: true);
+                }
+                else
+                {
+                    ExecutePipelineInstruction(nextInstruction);
+                }
             }
         }
 
-        
+        private Instruction FetchInstruction()
+        {
+            return _program[_programCounter.Value];
+        }
+
+        private bool RequiresPipelineFlush(Instruction instruction)
+        {
+            return Architecture.INSTRUCTIONS_THAT_FLUSH_PIPELINE.Contains(instruction.Mnemonic);
+        }
+
+        private void ExecutePipelineInstruction(Instruction instruction, bool advancePC = true)
+        {
+            var toExecute = _pipeline.Advance(instruction);
+            ExecuteInstruction(toExecute, advancePC);
+        }
+
+        private void FlushPipelineWithNops()
+        {
+            for (int i = 0; i < Architecture.INSTRUCTION_PIPELINE_SIZE - 1; i++)
+            {
+                ExecutePipelineInstruction(new Instruction("NOP"), advancePC: false);
+            }
+        }
+
+
+        /// <summary>
+        /// Execute instruction, changing program counter at the end.
+        /// </summary>
+        /// <param name="instruction">Instruction to execute.</param>
+        /// <param name="advancePC">Whether advance PC after executing the instruction.</param>
+        private void ExecuteInstruction(Instruction instruction, bool advancePC = true)
+        {
+            switch (instruction.Mnemonic)
+            {
+                case "NOP":
+                    if(advancePC) _programCounter.Increment();
+                    break;
+                case "HALT":
+                    _halted = true;
+                    if (advancePC) _programCounter.Increment();
+                    break;
+            }
+        }
+
 
 
 

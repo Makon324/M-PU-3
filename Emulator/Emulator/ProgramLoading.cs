@@ -69,6 +69,8 @@ namespace Emulator
         /// <exception cref="DirectoryNotFoundException">Thrown when solution root cannot be found</exception>
         public static string FindSolutionRoot()
         {
+            if (cache != null) return cache;
+
             // Start from the current assembly's location
             var assemblyLocation = Assembly.GetExecutingAssembly().Location;
             var startDirectory = Path.GetDirectoryName(assemblyLocation);
@@ -85,6 +87,7 @@ namespace Emulator
             {
                 if (directory.GetDirectories(".git").Any())
                 {
+                    cache = directory.FullName;
                     return directory.FullName;
                 }
 
@@ -94,6 +97,8 @@ namespace Emulator
             throw new DirectoryNotFoundException(
                 "Solution root not found looking for .git folder.");
         }
+
+        private static string? cache = null;
     }
 
     internal record Token(string Type, string Value, int Line, int StartColumn);

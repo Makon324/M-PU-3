@@ -215,6 +215,7 @@ namespace Emulator
         /// <remarks>This method processes each dictionary in the input list based on its "type" property.
         /// If the type is "label", it creates a <see cref="LabelStatement"/>. If the type is "instruction", it creates
         /// an <see cref="InstructionStatement"/> and converts its arguments into <see cref="Token"/> objects.</remarks>
+        /// <remarks>This method runs after code is already validated by python validator, so it omits some checks.</remarks>
         /// <param name="pythonList">A dynamic list of dictionaries, where each dictionary represents a program statement with properties such as
         /// type, label, mnemonic, and arguments.</param>
         /// <returns>A list of <see cref="ProgramStatement"/> objects representing the converted program statements.</returns>
@@ -300,6 +301,7 @@ namespace Emulator
         /// <summary>
         /// Compiles a list of <see cref="ProgramStatement"/> into a symbol table of labels and a list of instructions.
         /// </summary>
+        /// <remarks>This method runs after code is already validated by python validator, so it omits some checks.</remarks>
         /// <param name="statements">The list of parsed program statements to compile.</param>
         /// <param name="filePath">The source file path (used for error reporting).</param>
         /// <returns>
@@ -348,6 +350,7 @@ namespace Emulator
         /// <summary>
         /// Compiles a list of InstructionStatements and Labels into List of <see cref="Instruction">
         /// </summary>
+        /// <remarks>This method runs after code is already validated by python validator, so it omits some checks.</remarks>
         public static IReadOnlyList<Instruction> CompileProgram(
             IReadOnlyDictionary<string, ushort> labels, 
             IReadOnlyList<InstructionStatement> instructionStatements)

@@ -1,44 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Emulator
+﻿namespace Emulator
 {
     internal sealed class CPU
     {
-        private RegisterCollection _registers;
-        private RAM _ram;
-        private ProgramCounter _programCounter;
-        private InstructionPipeline _pipeline;
-        private byte _stackPointer;
-        private bool _zeroFlag;
-        private bool _carryFlag;
-        private bool _halted;
+        private CPUContext _context;
+        private readonly InstructionPipeline _pipeline;
         private readonly IReadOnlyList<Instruction> _program;
-
 
         public CPU(IReadOnlyList<Instruction> program)
         {
-            _registers = new RegisterCollection();
-            _ram = new RAM();
-            _programCounter = new ProgramCounter(0);
+            _context = new CPUContext();
             _pipeline = new InstructionPipeline();
-            _stackPointer = 0;
-            _zeroFlag = false;
-            _carryFlag = false;
-            _halted = false;
 
             _program = program;
         }
 
         /// <summary>
-        /// Starts program execution, advancing the instruction pipeline and executing instructions until a HALT instruction is encountered.
+        /// Starts program execution, advancing the instruction pipeline and executing instructions until a Halt instruction is encountered.
         /// </summary>
         public void Run()
         {
-            while (!_halted)
+            while (!_context.Halted)
             {
                 Instruction nextInstruction = FetchInstruction();
 
@@ -55,27 +36,36 @@ namespace Emulator
                     ExecutePipelineInstruction(nextInstruction);
                 }
             }
-        }
+        }        
 
         private Instruction FetchInstruction()
         {
-            if (_programCounter.Value >= _program.Count)
+            if (_context.ProgramCounter.Value >= _program.Count)
                 throw new InvalidOperationException("Program counter beyond loaded program");
 
-            return _program[_programCounter.Value];
+            return _program[_context.ProgramCounter.Value];
         }
 
         private static bool RequiresPipelineFlush(Instruction instruction)
         {
-            return Architecture.INSTRUCTIONS_THAT_FLUSH_PIPELINE.Contains(instruction.Mnemonic);
+            IExecuteInstruction execute = ExecuteFactory.GetExecute(instruction);
+            return execute.RequiresPipelineFlush;
         }
 
+        /// <summary>
+        /// Executes an instruction coming of the pipeline, advances the pipeline stages.
+        /// </summary>
         private void ExecutePipelineInstruction(Instruction instruction, bool advancePC = true)
         {
             var toExecute = _pipeline.Advance(instruction);
             ExecuteInstruction(toExecute, advancePC);
         }
 
+        /// <summary>
+        /// Flushes the instruction pipeline with NOP (No Operation) instructions, 
+        /// executing instructions in the pipeline.
+        /// </summary>
+        /// <remarks>Used before branch instructions.</remarks>
         private void FlushPipelineWithNops()
         {
             for (int i = 0; i < Architecture.INSTRUCTION_PIPELINE_SIZE - 1; i++)
@@ -84,25 +74,17 @@ namespace Emulator
             }
         }
 
-
         /// <summary>
-        /// Execute instruction, changing program counter at the end.
+        /// Executes a single instruction.
         /// </summary>
         /// <param name="instruction">Instruction to execute.</param>
         /// <param name="advancePC">Whether advance PC after executing the instruction.</param>
         private void ExecuteInstruction(Instruction instruction, bool advancePC = true)
         {
-            switch (instruction.Mnemonic)
-            {
-                case "NOP":
-                    if(advancePC) _programCounter.Increment();
-                    break;
-                case "HALT":
-                    _halted = true;
-                    if (advancePC) _programCounter.Increment();
-                    break;
-            }
+            IExecuteInstruction toExecute = ExecuteFactory.GetExecute(instruction);
+            toExecute.Execute(ref _context, advancePC);
         }
+
 
 
 

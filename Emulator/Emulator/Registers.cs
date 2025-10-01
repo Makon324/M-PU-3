@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Emulator
+﻿namespace Emulator
 {
     /// <summary>
     /// Represents a collection of CPU registers where register 0 ignores all writes and always reads 0.

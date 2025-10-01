@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Emulator
+﻿namespace Emulator
 {
     /// <summary>
     /// Emulates instruction pipeline behavior.
     /// </summary>
     /// <remarks>Pipeline size should remain <see cref="Architecture.INSTRUCTION_PIPELINE_SIZE"> at all times.</remarks>
-    internal class InstructionPipeline
+    internal sealed class InstructionPipeline
     {
         private readonly Queue<Instruction> _pipeline;
 

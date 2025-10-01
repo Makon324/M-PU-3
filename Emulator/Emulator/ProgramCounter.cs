@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Emulator
+﻿namespace Emulator
 {
     /// <summary>
     /// Emulates program counter and call stack behavior.
@@ -37,7 +31,7 @@ namespace Emulator
             _programCounter = address;
         }
 
-        public void PushJMP(ushort address)
+        public void PushCAL(ushort address)
         {
             if (address >= Architecture.MAX_PROGRAM_SIZE)
                 throw new ArgumentOutOfRangeException(nameof(address), "Address is out of bounds.");

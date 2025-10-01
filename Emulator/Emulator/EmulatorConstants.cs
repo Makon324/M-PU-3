@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Emulator
+﻿namespace Emulator
 {
     internal static class Architecture
     {
@@ -14,7 +7,10 @@ namespace Emulator
         public const int MAX_PROGRAM_SIZE = 1024;
         public const int INSTRUCTION_PIPELINE_SIZE = 3;
 
-        public static readonly ImmutableHashSet<string> INSTRUCTIONS_THAT_FLUSH_PIPELINE = ImmutableHashSet.Create("JMP", "BRH", "CAL", "RET");
+        public const int BRANCH_IF_ZERO_CODE = 0x00;      // ZeroFlag == 1
+        public const int BRANCH_IF_NOT_ZERO_CODE = 0x01;  // ZeroFlag == 0
+        public const int BRANCH_IF_CARRY_CODE = 0x02;     // CarryFlag == 1
+        public const int BRANCH_IF_NOT_CARRY_CODE = 0x03; // CarryFlag == 0
     }
 
     /// <summary>

@@ -11,15 +11,14 @@
             _stackPointer = value;
         }
 
-        public void Increment()
+        public void Increment(byte frameSize = 1)
         {
-            if (_stackPointer == byte.MaxValue)
+            if (_stackPointer + frameSize > byte.MaxValue)
                 throw new InvalidOperationException("Stack pointer overflow.");
 
-            _stackPointer++;
+            _stackPointer += frameSize;
         }
 
-        // Decrement stack pointer by frame size (number of bytes to pop)
         public void Decrement(byte frameSize)
         {
             if (_stackPointer < frameSize)

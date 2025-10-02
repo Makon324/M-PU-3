@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Net;
+using System.Reflection;
 
 namespace Emulator
 {
@@ -276,6 +277,46 @@ namespace Emulator
         }
     }
 
+    internal sealed class ExecuteMOVC
+    {
+        private readonly byte _destination;
+        private readonly byte _source;
+        private readonly byte _cond;
+
+        public ExecuteMOVC(List<Argument> arguments)
+        {
+            _source = ((RegisterArgument)arguments[0]).Value;
+            _destination = ((RegisterArgument)arguments[1]).Value;
+            _cond = ((NumberArgument)arguments[2]).Value;
+        }
+
+        public void Execute(ref CPUContext context, bool advancePC = true)
+        {
+            bool shouldMOV = false;
+
+            switch (_cond)
+            {
+                case Architecture.BRANCH_IF_ZERO_CODE:
+                    shouldMOV = context.ZeroFlag;
+                    break;
+                case Architecture.BRANCH_IF_NOT_ZERO_CODE:
+                    shouldMOV = !context.ZeroFlag;
+                    break;
+                case Architecture.BRANCH_IF_CARRY_CODE:
+                    shouldMOV = context.CarryFlag;
+                    break;
+                case Architecture.BRANCH_IF_NOT_CARRY_CODE:
+                    shouldMOV = !context.CarryFlag;
+                    break;
+            }
+
+            if (shouldMOV)
+            {
+                context.Registers[_destination] = context.Registers[_source];
+            }
+        }
+    }
+
     #endregion
 
     #region Memory / Stack Operations
@@ -500,6 +541,24 @@ namespace Emulator
         public void Execute(ref CPUContext context, bool advancePC = true)
         {
             context.StackPointer.Decrement(_frameSize);
+
+            if (advancePC)
+                context.ProgramCounter.Increment();
+        }
+    }
+
+    internal sealed class ExecutePSHM : IExecuteInstruction
+    {
+        private readonly byte _frameSize;
+
+        public ExecutePSHM(List<Argument> arguments)
+        {
+            _frameSize = ((NumberArgument)arguments[0]).Value;
+        }
+
+        public void Execute(ref CPUContext context, bool advancePC = true)
+        {
+            context.StackPointer.Increment(_frameSize);
 
             if (advancePC)
                 context.ProgramCounter.Increment();

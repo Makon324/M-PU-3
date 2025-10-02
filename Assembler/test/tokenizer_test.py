@@ -1,4 +1,5 @@
 import pytest
+import textwrap
 from tokenizer import *
 from errors import *
 
@@ -11,25 +12,25 @@ def test_empty():
 
 def test_simple_code():
     tokenizer = AssemblerTokenizer()
-    code = \
-    """.start:
+    code = textwrap.dedent("""\
+        .start:
         ADI R1, 123 ; comment
         PST R2, -0x7A
         NOP
-    """
+    """)
 
     expected = [
         Token(type='LABEL', value='.start:', line=1, start_column=1),
 
-        Token(type='MNEMONIC', value='ADI', line=2, start_column=9),
-        Token(type='REGISTER', value='R1', line=2, start_column=13),
-        Token(type='DEC', value='123', line=2, start_column=17),
+        Token(type='MNEMONIC', value='ADI', line=2, start_column=1),
+        Token(type='REGISTER', value='R1', line=2, start_column=5),
+        Token(type='DEC', value='123', line=2, start_column=9),
 
-        Token(type='MNEMONIC', value='PST', line=3, start_column=9),
-        Token(type='REGISTER', value='R2', line=3, start_column=13),
-        Token(type='HEX', value='-0x7A', line=3, start_column=17),
+        Token(type='MNEMONIC', value='PST', line=3, start_column=1),
+        Token(type='REGISTER', value='R2', line=3, start_column=5),
+        Token(type='HEX', value='-0x7A', line=3, start_column=9),
 
-        Token(type='MNEMONIC', value='NOP', line=4, start_column=9)
+        Token(type='MNEMONIC', value='NOP', line=4, start_column=1)
     ]
 
     tokens = tokenizer.tokenize(code)

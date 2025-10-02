@@ -25,16 +25,9 @@ def make_tokens(to_build: list[tuple]):
     """Helper to build tokens list:
     make_tokens(("MNEMONIC", "MOV", 1, 1), ("REGISTER", "R1", 1, 5))
     """
-    tokens = []
-    for t in to_build:
-        if len(t) == 2:
-            tokens.append(make_token(t[0], t[1]))
-        elif len(t) == 3:
-            tokens.append(make_token(t[0], t[1], t[2]))
-        elif len(t) == 4:
-            tokens.append(make_token(t[0], t[1], t[2], t[3]))
-        else:
-            raise ValueError(f"Tuple must have 2, 3, or 4 elements, got {len(t)}")
+    tokens: list[Token] = []
+    for spec in to_build:
+        tokens.append(make_token(*spec))
     return tokens
 
 

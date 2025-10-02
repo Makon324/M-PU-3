@@ -314,6 +314,9 @@ namespace Emulator
             {
                 context.Registers[_destination] = context.Registers[_source];
             }
+
+            if (advancePC)
+                context.ProgramCounter.Increment();
         }
     }
 

@@ -29,20 +29,13 @@ namespace Emulator
             string mnemonic = instruction.Mnemonic;
             List<Argument> arguments = (List<Argument>)instruction.Arguments;
 
-            string className = "Emulator.Execute" + mnemonic;
-
-            Assembly assembly = Assembly.GetExecutingAssembly();
-
-            Type? type = assembly.GetType(className, throwOnError: false, ignoreCase: false);
-
-            if (type == null)
-            {
-                throw new InvalidOperationException($"Class {className} not found.");
-            }
+            Type? type = Assembly.GetExecutingAssembly()
+                .GetType($"Emulator.Execute{mnemonic}")
+                ?? throw new InvalidOperationException($"Instruction '{mnemonic}' not supported");
 
             if (!typeof(IExecuteInstruction).IsAssignableFrom(type))
             {
-                throw new InvalidOperationException($"{className} was found but does not implement IExecuteInstruction.");
+                throw new InvalidOperationException($"Instruction '{mnemonic}' not supported");
             }
 
             // Try constructor that accepts List<Argument>
@@ -55,7 +48,7 @@ namespace Emulator
             }
 
             if (instruction.Arguments.Count > 0)
-                throw new InvalidOperationException($"Cannot create an instance of {className}; no suitable constructor found.");
+                throw new InvalidOperationException($"Instruction '{mnemonic}' not supported");
 
             // Try parameterless constructor
             ConstructorInfo? ctorParameterless = type.GetConstructor(Type.EmptyTypes);
@@ -66,7 +59,7 @@ namespace Emulator
                 return toExecute;
             }
 
-            throw new InvalidOperationException($"Cannot create an instance of {className}; no suitable constructor found.");
+            throw new InvalidOperationException($"Instruction '{mnemonic}' not supported");
         }
 
         private static readonly Dictionary<Instruction, IExecuteInstruction> _cache = new();

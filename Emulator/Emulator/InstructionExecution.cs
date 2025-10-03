@@ -98,17 +98,17 @@ namespace Emulator
     /// </summary>
     internal abstract class ExecuteALU : BaseExecute
     {
-        private readonly byte _destination;
-        private readonly byte _sourceA;
-        private readonly byte _sourceB; // 0 for 2-operand instructions     
+        private readonly Register _destination;
+        private readonly Register _sourceA;
+        private readonly Register _sourceB; // 0 for 2-operand instructions     
 
         public ExecuteALU(List<Argument> arguments)
         {
-            _destination = ((RegisterArgument)arguments[0]).Value;
-            _sourceA = ((RegisterArgument)arguments[1]).Value;
+            _destination = (Register)((RegisterArgument)arguments[0]).Value;
+            _sourceA = (Register)((RegisterArgument)arguments[1]).Value;
 
             _sourceB = arguments.Count > 2
-                ? ((RegisterArgument)arguments[2]).Value : (byte)0;
+                ? (Register)((RegisterArgument)arguments[2]).Value : Register.R0;
         }
 
         protected abstract (byte result, bool carry) Compute(byte a, byte b, byte carryIn /*0 or 1, byte to avoid duplicate casting*/);
@@ -276,14 +276,14 @@ namespace Emulator
 
     internal sealed class ExecuteMOVC : BaseExecute
     {
-        private readonly byte _destination;
-        private readonly byte _source;
+        private readonly Register _destination;
+        private readonly Register _source;
         private readonly byte _cond;
 
         public ExecuteMOVC(List<Argument> arguments)
         {
-            _source = ((RegisterArgument)arguments[0]).Value;
-            _destination = ((RegisterArgument)arguments[1]).Value;
+            _source = (Register)((RegisterArgument)arguments[0]).Value;
+            _destination = (Register)((RegisterArgument)arguments[1]).Value;
             _cond = ((NumberArgument)arguments[2]).Value;
         }
 
@@ -320,11 +320,11 @@ namespace Emulator
 
     internal abstract class ExecuteMemoryWrite : BaseExecute
     {
-        protected readonly byte _source;
+        protected readonly Register _source;
 
         public ExecuteMemoryWrite(List<Argument> arguments)
         {
-            _source = ((RegisterArgument)arguments[0]).Value;
+            _source = (Register)((RegisterArgument)arguments[0]).Value;
         }
 
         protected abstract byte GetAddress(CPUContext context);
@@ -352,12 +352,12 @@ namespace Emulator
 
     internal sealed class ExecuteMSP : ExecuteMemoryWrite
     {
-        private readonly byte _pointerRegister;
+        private readonly Register _pointerRegister;
         private readonly sbyte _offset;
 
         public ExecuteMSP(List<Argument> arguments) : base(arguments)
         {
-            _pointerRegister = ((RegisterArgument)arguments[1]).Value;
+            _pointerRegister = (Register)((RegisterArgument)arguments[1]).Value;
             _offset = unchecked((sbyte)((NumberArgument)arguments[2]).Value);
         }
 
@@ -384,12 +384,12 @@ namespace Emulator
 
     internal sealed class ExecuteMSPS : ExecuteMemoryWrite
     {
-        private readonly byte _pointerRegister;
+        private readonly Register _pointerRegister;
         private readonly sbyte _offset;
 
         public ExecuteMSPS(List<Argument> arguments) : base(arguments)
         {
-            _pointerRegister = ((RegisterArgument)arguments[1]).Value;
+            _pointerRegister = (Register)((RegisterArgument)arguments[1]).Value;
             _offset = unchecked((sbyte)((NumberArgument)arguments[2]).Value);
         }
 
@@ -401,11 +401,11 @@ namespace Emulator
 
     internal abstract class ExecuteMemoryRead : BaseExecute
     {
-        protected readonly byte _destination;
+        protected readonly Register _destination;
 
         public ExecuteMemoryRead(List<Argument> arguments)
         {
-            _destination = ((RegisterArgument)arguments[0]).Value;
+            _destination = (Register)((RegisterArgument)arguments[0]).Value;
         }
 
         protected abstract byte GetAddress(CPUContext context);
@@ -433,12 +433,12 @@ namespace Emulator
 
     internal sealed class ExecuteMLP : ExecuteMemoryRead
     {
-        private readonly byte _pointerRegister;
+        private readonly Register _pointerRegister;
         private readonly sbyte _offset;
 
         public ExecuteMLP(List<Argument> arguments) : base(arguments)
         {
-            _pointerRegister = ((RegisterArgument)arguments[1]).Value;
+            _pointerRegister = (Register)((RegisterArgument)arguments[1]).Value;
             _offset = unchecked((sbyte)((NumberArgument)arguments[2]).Value);
         }
 
@@ -465,12 +465,12 @@ namespace Emulator
 
     internal sealed class ExecuteMLPS : ExecuteMemoryRead
     {
-        private readonly byte _pointerRegister;
+        private readonly Register _pointerRegister;
         private readonly sbyte _offset;
 
         public ExecuteMLPS(List<Argument> arguments) : base(arguments)
         {
-            _pointerRegister = ((RegisterArgument)arguments[1]).Value;
+            _pointerRegister = (Register)((RegisterArgument)arguments[1]).Value;
             _offset = unchecked((sbyte)((NumberArgument)arguments[2]).Value);
         }
 
@@ -500,11 +500,11 @@ namespace Emulator
 
     internal sealed class ExecutePHR : BaseExecute
     {
-        private readonly byte _source;
+        private readonly Register _source;
 
         public ExecutePHR(List<Argument> arguments)
         {
-            _source = ((RegisterArgument)arguments[0]).Value;
+            _source = (Register)((RegisterArgument)arguments[0]).Value;
         }
 
         protected override void ExecuteInstruction(ref CPUContext context)

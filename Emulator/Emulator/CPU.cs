@@ -48,8 +48,8 @@
 
         private static bool RequiresPipelineFlush(Instruction instruction)
         {
-            IExecuteInstruction execute = ExecuteFactory.GetExecute(instruction);
-            return execute.RequiresPipelineFlush;
+            BaseExecute execute = ExecuteFactory.GetExecute(instruction);
+            return execute.IsControlFlowInstruction;
         }
 
         /// <summary>
@@ -81,7 +81,7 @@
         /// <param name="advancePC">Whether advance PC after executing the instruction.</param>
         private void ExecuteInstruction(Instruction instruction, bool advancePC = true)
         {
-            IExecuteInstruction toExecute = ExecuteFactory.GetExecute(instruction);
+            BaseExecute toExecute = ExecuteFactory.GetExecute(instruction);
             toExecute.Execute(ref _context, advancePC);
         }
 

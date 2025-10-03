@@ -5,21 +5,29 @@ namespace Emulator
 {
     /// <summary>
     /// Defines the contract for instruction execution implementations.
-    /// Each instruction type implements this interface to provide its specific execution logic.
+    /// Each instruction type implements ExecuteInstruction to provide its specific execution logic.
     /// </summary>
-    internal interface IExecuteInstruction
+    internal abstract class BaseExecute
     {
-        void Execute(ref CPUContext context, bool advancePC = true);
-        
-        bool RequiresPipelineFlush => false;
+        public void Execute(ref CPUContext context, bool advancePC = true)
+        {
+            ExecuteInstruction(ref context);
+
+            if (advancePC && !IsControlFlowInstruction)
+                context.ProgramCounter.Increment();
+        }
+
+        public virtual bool IsControlFlowInstruction => false;
+
+        protected abstract void ExecuteInstruction(ref CPUContext context);       
     }
 
     /// <summary>
-    /// Factory class to create IExecuteInstruction instances based on Instruction mnemonics.
+    /// Factory class to create <see cref="BaseExecute"> instances based on Instruction mnemonics.
     /// </summary>
     internal static class ExecuteFactory
     {
-        public static IExecuteInstruction GetExecute(Instruction instruction)
+        public static BaseExecute GetExecute(Instruction instruction)
         {
             if (_cache.TryGetValue(instruction, out var value))
             {
@@ -33,7 +41,7 @@ namespace Emulator
                 .GetType($"Emulator.Execute{mnemonic}")
                 ?? throw new InvalidOperationException($"Instruction '{mnemonic}' not supported");
 
-            if (!typeof(IExecuteInstruction).IsAssignableFrom(type))
+            if (!typeof(BaseExecute).IsAssignableFrom(type))
             {
                 throw new InvalidOperationException($"Instruction '{mnemonic}' not supported");
             }
@@ -42,7 +50,7 @@ namespace Emulator
             ConstructorInfo? ctorList = type.GetConstructor(new Type[] { typeof(List<Argument>) });
             if (ctorList != null)
             {
-                IExecuteInstruction toExecute = (IExecuteInstruction)ctorList.Invoke(new object[] { arguments });
+                BaseExecute toExecute = (BaseExecute)ctorList.Invoke(new object[] { arguments });
                 _cache.Add(instruction, toExecute);
                 return toExecute;
             }
@@ -54,7 +62,7 @@ namespace Emulator
             ConstructorInfo? ctorParameterless = type.GetConstructor(Type.EmptyTypes);
             if (ctorParameterless != null)
             {
-                IExecuteInstruction toExecute = (IExecuteInstruction)ctorParameterless.Invoke(Array.Empty<object>());
+                BaseExecute toExecute = (BaseExecute)ctorParameterless.Invoke(Array.Empty<object>());
                 _cache.Add(instruction, toExecute);
                 return toExecute;
             }
@@ -62,23 +70,22 @@ namespace Emulator
             throw new InvalidOperationException($"Instruction '{mnemonic}' not supported");
         }
 
-        private static readonly Dictionary<Instruction, IExecuteInstruction> _cache = new();
+        private static readonly Dictionary<Instruction, BaseExecute> _cache = new();
     }
 
     #region Instruction Implementations
 
-    internal sealed class ExecuteNOP : IExecuteInstruction
+    internal sealed class ExecuteNOP : BaseExecute
     {
-        public void Execute(ref CPUContext context, bool advancePC = true)
+        protected override void ExecuteInstruction(ref CPUContext context)
         {
-            if (advancePC)
-                context.ProgramCounter.Increment();
+            // Do Nothing
         }
     }
 
-    internal sealed class ExecuteHLT : IExecuteInstruction
+    internal sealed class ExecuteHLT : BaseExecute
     {
-        public void Execute(ref CPUContext context, bool advancePC = true)
+        protected override void ExecuteInstruction(ref CPUContext context)
         {
             context.Halted = true;
         }
@@ -89,7 +96,7 @@ namespace Emulator
     /// <summary>
     /// Base class for ALU operations operating on only registers.
     /// </summary>
-    internal abstract class ExecuteALU : IExecuteInstruction
+    internal abstract class ExecuteALU : BaseExecute
     {
         private readonly byte _destination;
         private readonly byte _sourceA;
@@ -106,7 +113,7 @@ namespace Emulator
 
         protected abstract (byte result, bool carry) Compute(byte a, byte b, byte carryIn /*0 or 1, byte to avoid duplicate casting*/);
 
-        public void Execute(ref CPUContext context, bool advancePC = true)
+        protected override void ExecuteInstruction(ref CPUContext context)
         {
             byte registerAValue = context.Registers[_sourceA];
             byte registerBValue = context.Registers[_sourceB];
@@ -116,9 +123,6 @@ namespace Emulator
 
             context.ZeroFlag = (result == 0);
             context.Registers[_destination] = result;
-
-            if (advancePC)
-                context.ProgramCounter.Increment();
         }
 
         /// <summary>
@@ -137,7 +141,7 @@ namespace Emulator
     }
 
     internal sealed class ExecuteADD(List<Argument> arguments) 
-        : ExecuteALU(arguments), IExecuteInstruction
+        : ExecuteALU(arguments)
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
@@ -147,7 +151,7 @@ namespace Emulator
     }
 
     internal sealed class ExecuteADC(List<Argument> arguments)
-        : ExecuteALU(arguments), IExecuteInstruction
+        : ExecuteALU(arguments)
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
@@ -157,7 +161,7 @@ namespace Emulator
     }
 
     internal sealed class ExecuteSUB(List<Argument> arguments)
-        : ExecuteALU(arguments), IExecuteInstruction
+        : ExecuteALU(arguments)
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
@@ -167,7 +171,7 @@ namespace Emulator
     }
 
     internal sealed class ExecuteSUBC(List<Argument> arguments)
-        : ExecuteALU(arguments), IExecuteInstruction
+        : ExecuteALU(arguments)
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
@@ -177,7 +181,7 @@ namespace Emulator
     }
 
     internal sealed class ExecuteAND(List<Argument> arguments)
-        : ExecuteALU(arguments), IExecuteInstruction
+        : ExecuteALU(arguments)
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
@@ -187,7 +191,7 @@ namespace Emulator
     }
 
     internal sealed class ExecuteOR(List<Argument> arguments)
-        : ExecuteALU(arguments), IExecuteInstruction
+        : ExecuteALU(arguments)
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
@@ -197,7 +201,7 @@ namespace Emulator
     }
 
     internal sealed class ExecuteXOR(List<Argument> arguments)
-        : ExecuteALU(arguments), IExecuteInstruction
+        : ExecuteALU(arguments)
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
@@ -207,7 +211,7 @@ namespace Emulator
     }
 
     internal sealed class ExecuteNOT(List<Argument> arguments)
-        : ExecuteALU(arguments), IExecuteInstruction
+        : ExecuteALU(arguments)
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
@@ -217,7 +221,7 @@ namespace Emulator
     }
 
     internal sealed class ExecuteSHFT(List<Argument> arguments)
-        : ExecuteALU(arguments), IExecuteInstruction
+        : ExecuteALU(arguments)
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
@@ -228,7 +232,7 @@ namespace Emulator
     }
 
     internal sealed class ExecuteSHFC(List<Argument> arguments)
-        : ExecuteALU(arguments), IExecuteInstruction
+        : ExecuteALU(arguments)
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
@@ -239,7 +243,7 @@ namespace Emulator
     }
 
     internal sealed class ExecuteSHFE(List<Argument> arguments)
-    : ExecuteALU(arguments), IExecuteInstruction
+    : ExecuteALU(arguments)
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
@@ -251,7 +255,7 @@ namespace Emulator
     }
 
     internal sealed class ExecuteSEX(List<Argument> arguments)
-    : ExecuteALU(arguments), IExecuteInstruction
+    : ExecuteALU(arguments)
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
@@ -262,7 +266,7 @@ namespace Emulator
     }
 
     internal sealed class ExecuteMOV(List<Argument> arguments) 
-        : ExecuteALU(arguments), IExecuteInstruction
+        : ExecuteALU(arguments)
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
@@ -270,7 +274,7 @@ namespace Emulator
         }
     }
 
-    internal sealed class ExecuteMOVC
+    internal sealed class ExecuteMOVC : BaseExecute
     {
         private readonly byte _destination;
         private readonly byte _source;
@@ -283,7 +287,7 @@ namespace Emulator
             _cond = ((NumberArgument)arguments[2]).Value;
         }
 
-        public void Execute(ref CPUContext context, bool advancePC = true)
+        protected override void ExecuteInstruction(ref CPUContext context)
         {
             bool shouldMOV = false;
 
@@ -307,9 +311,6 @@ namespace Emulator
             {
                 context.Registers[_destination] = context.Registers[_source];
             }
-
-            if (advancePC)
-                context.ProgramCounter.Increment();
         }
     }
 
@@ -317,7 +318,7 @@ namespace Emulator
 
     #region Memory / Stack Operations
 
-    internal abstract class ExecuteMemoryWrite : IExecuteInstruction
+    internal abstract class ExecuteMemoryWrite : BaseExecute
     {
         protected readonly byte _source;
 
@@ -328,16 +329,13 @@ namespace Emulator
 
         protected abstract byte GetAddress(CPUContext context);
 
-        public void Execute(ref CPUContext context, bool advancePC = true)
+        protected override void ExecuteInstruction(ref CPUContext context)
         {
             context.RAM[GetAddress(context)] = context.Registers[_source];
-
-            if (advancePC)
-                context.ProgramCounter.Increment();
         }
     }
 
-    internal sealed class ExecuteMST : ExecuteMemoryWrite, IExecuteInstruction
+    internal sealed class ExecuteMST : ExecuteMemoryWrite
     {
         private readonly byte _address;
 
@@ -352,7 +350,7 @@ namespace Emulator
         }
     }
 
-    internal sealed class ExecuteMSP : ExecuteMemoryWrite, IExecuteInstruction
+    internal sealed class ExecuteMSP : ExecuteMemoryWrite
     {
         private readonly byte _pointerRegister;
         private readonly sbyte _offset;
@@ -369,7 +367,7 @@ namespace Emulator
         }
     }
 
-    internal sealed class ExecuteMSS : ExecuteMemoryWrite, IExecuteInstruction
+    internal sealed class ExecuteMSS : ExecuteMemoryWrite
     {
         private readonly byte _address;
 
@@ -384,7 +382,7 @@ namespace Emulator
         }
     }
 
-    internal sealed class ExecuteMSPS : ExecuteMemoryWrite, IExecuteInstruction
+    internal sealed class ExecuteMSPS : ExecuteMemoryWrite
     {
         private readonly byte _pointerRegister;
         private readonly sbyte _offset;
@@ -401,7 +399,7 @@ namespace Emulator
         }
     }
 
-    internal abstract class ExecuteMemoryRead : IExecuteInstruction
+    internal abstract class ExecuteMemoryRead : BaseExecute
     {
         protected readonly byte _destination;
 
@@ -412,16 +410,13 @@ namespace Emulator
 
         protected abstract byte GetAddress(CPUContext context);
 
-        public void Execute(ref CPUContext context, bool advancePC = true)
+        protected override void ExecuteInstruction(ref CPUContext context)
         {
             context.Registers[_destination] = context.RAM[GetAddress(context)];
-
-            if (advancePC)
-                context.ProgramCounter.Increment();
         }
     }
 
-    internal sealed class ExecuteMLD : ExecuteMemoryRead, IExecuteInstruction
+    internal sealed class ExecuteMLD : ExecuteMemoryRead
     {
         private readonly byte _address;
 
@@ -436,7 +431,7 @@ namespace Emulator
         }
     }
 
-    internal sealed class ExecuteMLP : ExecuteMemoryRead, IExecuteInstruction
+    internal sealed class ExecuteMLP : ExecuteMemoryRead
     {
         private readonly byte _pointerRegister;
         private readonly sbyte _offset;
@@ -453,7 +448,7 @@ namespace Emulator
         }
     }
 
-    internal sealed class ExecuteMLS : ExecuteMemoryRead, IExecuteInstruction
+    internal sealed class ExecuteMLS : ExecuteMemoryRead
     {
         private readonly byte _address;
 
@@ -468,7 +463,7 @@ namespace Emulator
         }
     }
 
-    internal sealed class ExecuteMLPS : ExecuteMemoryRead, IExecuteInstruction
+    internal sealed class ExecuteMLPS : ExecuteMemoryRead
     {
         private readonly byte _pointerRegister;
         private readonly sbyte _offset;
@@ -487,7 +482,7 @@ namespace Emulator
 
     // Stack operations
 
-    internal sealed class ExecutePSH : IExecuteInstruction
+    internal sealed class ExecutePSH : BaseExecute
     {
         private readonly byte _value;
 
@@ -496,17 +491,14 @@ namespace Emulator
             _value = ((NumberArgument)arguments[0]).Value;
         }
 
-        public void Execute(ref CPUContext context, bool advancePC = true)
+        protected override void ExecuteInstruction(ref CPUContext context)
         {
             context.RAM[context.StackPointer.Value] = _value;
             context.StackPointer.Increment();
-
-            if (advancePC)
-                context.ProgramCounter.Increment();
         }
     }
 
-    internal sealed class ExecutePHR : IExecuteInstruction
+    internal sealed class ExecutePHR : BaseExecute
     {
         private readonly byte _source;
 
@@ -515,17 +507,14 @@ namespace Emulator
             _source = ((RegisterArgument)arguments[0]).Value;
         }
 
-        public void Execute(ref CPUContext context, bool advancePC = true)
+        protected override void ExecuteInstruction(ref CPUContext context)
         {
             context.RAM[context.StackPointer.Value] = context.Registers[_source];
             context.StackPointer.Increment();
-
-            if (advancePC)
-                context.ProgramCounter.Increment();
         }
     }
 
-    internal sealed class ExecutePOP : IExecuteInstruction
+    internal sealed class ExecutePOP : BaseExecute
     {
         private readonly byte _frameSize;
 
@@ -534,16 +523,13 @@ namespace Emulator
             _frameSize = ((NumberArgument)arguments[0]).Value;
         }
 
-        public void Execute(ref CPUContext context, bool advancePC = true)
+        protected override void ExecuteInstruction(ref CPUContext context)
         {
             context.StackPointer.Decrement(_frameSize);
-
-            if (advancePC)
-                context.ProgramCounter.Increment();
         }
     }
 
-    internal sealed class ExecutePSHM : IExecuteInstruction
+    internal sealed class ExecutePSHM : BaseExecute
     {
         private readonly byte _frameSize;
 
@@ -552,12 +538,9 @@ namespace Emulator
             _frameSize = ((NumberArgument)arguments[0]).Value;
         }
 
-        public void Execute(ref CPUContext context, bool advancePC = true)
+        protected override void ExecuteInstruction(ref CPUContext context)
         {
             context.StackPointer.Increment(_frameSize);
-
-            if (advancePC)
-                context.ProgramCounter.Increment();
         }
     }
 
@@ -565,7 +548,7 @@ namespace Emulator
 
     #region Control Flow Operations
 
-    internal sealed class ExecuteJMP : IExecuteInstruction
+    internal sealed class ExecuteJMP : BaseExecute
     {
         private readonly ushort _address;
 
@@ -574,15 +557,15 @@ namespace Emulator
             _address = ((AddressArgument)arguments[0]).Value;
         }
 
-        public void Execute(ref CPUContext context, bool advancePC = true)
+        protected override void ExecuteInstruction(ref CPUContext context)
         {
             context.ProgramCounter.SetBRH(_address);
         }
 
-        public bool RequiresPipelineFlush => true;
+        public override bool IsControlFlowInstruction => true;
     }
     
-    internal sealed class ExecuteBRH : IExecuteInstruction
+    internal sealed class ExecuteBRH : BaseExecute
     {
         private readonly byte _cond;
         private readonly ushort _address;
@@ -593,7 +576,7 @@ namespace Emulator
             _address = ((AddressArgument)arguments[1]).Value;
         }
 
-        public void Execute(ref CPUContext context, bool advancePC = true)
+        protected override void ExecuteInstruction(ref CPUContext context)
         {
             bool shouldBranch = false;
 
@@ -623,10 +606,10 @@ namespace Emulator
             }
         }
 
-        public bool RequiresPipelineFlush => true;
+        public override bool IsControlFlowInstruction => true;
     }
 
-    internal sealed class ExecuteCAL : IExecuteInstruction
+    internal sealed class ExecuteCAL : BaseExecute
     {
         private readonly ushort _address;
 
@@ -635,15 +618,15 @@ namespace Emulator
             _address = ((AddressArgument)arguments[0]).Value;
         }
 
-        public void Execute(ref CPUContext context, bool advancePC = true)
+        protected override void ExecuteInstruction(ref CPUContext context)
         {
             context.ProgramCounter.PushCAL(_address);
         }
 
-        public bool RequiresPipelineFlush => true;
+        public override bool IsControlFlowInstruction => true;
     }
 
-    internal sealed class ExecuteRET : IExecuteInstruction
+    internal sealed class ExecuteRET : BaseExecute
     {
         private readonly byte _frameSize;
 
@@ -652,21 +635,14 @@ namespace Emulator
             _frameSize = ((NumberArgument)arguments[0]).Value;
         }
 
-        public void Execute(ref CPUContext context, bool advancePC = true)
+        protected override void ExecuteInstruction(ref CPUContext context)
         {
             context.StackPointer.Decrement(_frameSize);
             context.ProgramCounter.PopRET();
         }
 
-        public bool RequiresPipelineFlush => true;
+        public override bool IsControlFlowInstruction => true;
     }
-
-
-
-
-
-
-
 
     #endregion
 

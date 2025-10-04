@@ -310,6 +310,7 @@ namespace Emulator
             if (shouldMOV)
             {
                 context.Registers[_destination] = context.Registers[_source];
+                context.ZeroFlag = context.Registers[_destination] == 0;
             }
         }
     }
@@ -413,6 +414,7 @@ namespace Emulator
         protected override void ExecuteInstruction(ref CPUContext context)
         {
             context.Registers[_destination] = context.RAM[GetAddress(context)];
+            context.ZeroFlag = context.Registers[_destination] == 0;
         }
     }
 

@@ -5,13 +5,12 @@ from tokenizer import AssemblerTokenizer
 from parser import AssemblerParser
 from validator import AssemblerValidator
 from code_generator import AssemblerCodeGenerator
-from errors import AssemblerError
+from errors import InvalidSyntaxError
 
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -50,7 +49,7 @@ class Assembler:
 
             return binary
 
-        except AssemblerError as e:
+        except InvalidSyntaxError as e:
             logger.error("Assembly failed: %s", e.message)
             raise
         except Exception as e:
@@ -68,7 +67,7 @@ def load_code(path: str) -> str:
         if file_path.stat().st_size == 0:
             logger.warning("File '%s' is empty", path)
 
-        with file_path.open('r', encoding='utf-8') as f:
+        with file_path.open("r", encoding="utf-8") as f:
             content = f.read()
 
         logger.debug("Loaded %d bytes from %s", len(content), path)
@@ -92,15 +91,19 @@ def store_program(binary_code: list[str], output_path: str) -> None:
     """Store the compiled program as 16-bit binary numbers in a text file."""
     try:
         output_file = Path(output_path)
-        output_file.parent.mkdir(parents=True, exist_ok=True)  # Create directories if needed
+        output_file.parent.mkdir(
+            parents=True, exist_ok=True
+        )  # Create directories if needed
 
-        with output_file.open('w', encoding='utf-8') as f:
+        with output_file.open("w", encoding="utf-8") as f:
             for i, instruction in enumerate(binary_code):
                 # Format as two 8-bit groups separated by space
                 formatted_instruction = f"{instruction[:8]} {instruction[8:]}"
-                f.write(formatted_instruction + '\n')
+                f.write(formatted_instruction + "\n")
 
-        logger.info("Successfully wrote %d instructions to %s", len(binary_code), output_path)
+        logger.info(
+            "Successfully wrote %d instructions to %s", len(binary_code), output_path
+        )
 
     except IOError as e:
         logger.error("Failed to write output file %s: %s", output_path, e)
@@ -114,24 +117,23 @@ def setup_argument_parser():
 
     parser = argparse.ArgumentParser(
         description="Assemble custom assembly language to machine code",
-        epilog="Example: python assembler.py program.as -o program.txt"
+        epilog="Example: python assembler.py program.as -o program.txt",
+    )
+
+    parser.add_argument("input_file", help="Input assembly file (.as extension)")
+
+    parser.add_argument(
+        "-o",
+        "--output",
+        dest="output_file",
+        help="Output file path (default: input file with .txt extension)",
     )
 
     parser.add_argument(
-        'input_file',
-        help='Input assembly file (.as extension)'
-    )
-
-    parser.add_argument(
-        '-o', '--output',
-        dest='output_file',
-        help='Output file path (default: input file with .txt extension)'
-    )
-
-    parser.add_argument(
-        '-v', '--verbose',
-        action='store_true',
-        help='Enable verbose logging for debugging'
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable verbose logging for debugging",
     )
 
     return parser
@@ -145,7 +147,7 @@ def main() -> int:
     input_path = args.input_file
 
     # Validate input file extension
-    if Path(input_path).suffix.lower() != '.as':
+    if Path(input_path).suffix.lower() != ".as":
         logger.error(f"Invalid input file extension: {input_path}")
         print("Error: Input file must have .as extension")
         return 1
@@ -153,10 +155,10 @@ def main() -> int:
     # Generate output path if not provided
     if args.output_file:
         output_path = args.output_file
-        if not output_path.lower().endswith('.txt'):
+        if not output_path.lower().endswith(".txt"):
             logger.warning(f"Output file {output_path} does not have .txt extension")
     else:
-        output_path = Path(input_path).with_suffix('.txt')
+        output_path = Path(input_path).with_suffix(".txt")
 
     try:
         # Load, assemble, and store
@@ -167,10 +169,12 @@ def main() -> int:
         store_program(binary_program, output_path)
 
         logger.info("Assembly completed successfully")
-        print(f"Successfully assembled {len(binary_program)} instructions to {output_path}")
+        print(
+            f"Successfully assembled {len(binary_program)} instructions to {output_path}"
+        )
         return 0
 
-    except AssemblerError as e:
+    except InvalidSyntaxError as e:
         return 1
     except KeyboardInterrupt:
         logger.info("Assembly interrupted by user")
@@ -184,7 +188,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-
-
-
-

@@ -4,7 +4,7 @@ This module defines all custom exception classes used throughout the assembler p
 """
 
 
-class AssemblerError(Exception):
+class InvalidSyntaxError(Exception):
     """Base exception for all assembler custom errors.
 
     Args:
@@ -35,51 +35,47 @@ class AssemblerError(Exception):
         return self.message
 
 
-class UnexpectedCharError(AssemblerError):
+class UnexpectedCharError(InvalidSyntaxError):
     """Raised when an unexpected character is encountered in input."""
 
 
-class InvalidSyntaxError(AssemblerError):
-    """Raised when invalid syntax is encountered in input."""
-
-
-class InvalidInstructionError(AssemblerError):
+class InvalidInstructionError(InvalidSyntaxError):
     """Raised when an invalid instruction is encountered in input."""
 
 
-class InvalidOperandError(AssemblerError):
+class InvalidOperandError(InvalidSyntaxError):
     """Raised when an invalid operand is encountered in input."""
 
 
-class InvalidRegisterError(AssemblerError):
+class InvalidRegisterError(InvalidSyntaxError):
     """Raised when an invalid register is encountered in input."""
 
 
-class InvalidAddressError(AssemblerError):
+class InvalidAddressError(InvalidSyntaxError):
     """Raised when an invalid address is encountered in input."""
 
 
-class ValueOutOfRangeError(AssemblerError):
+class ValueOutOfRangeError(InvalidSyntaxError):
     """Raised when an invalid value is encountered in input."""
 
 
-class DuplicateLabelError(AssemblerError):
+class DuplicateLabelError(InvalidSyntaxError):
     """Raised duplicate label is encountered in input."""
 
 
-class UndefinedLabelError(AssemblerError):
+class UndefinedLabelError(InvalidSyntaxError):
     """Raised when an undefined label is encountered in input."""
 
 
-class ProgramTooLongError(AssemblerError):
+class ProgramTooLongError(InvalidSyntaxError):
     """Raised when the program exceeds 1024 instructions in length."""
 
 
-# Section: Instructions Loading Errors
+# Section: Instruction Loading Errors
 
 
 class InstructionsLoadError(Exception):
-    """Raised when error is encountered during laoding instructions file."""
+    """Raised when error is encountered during loading instructions file."""
 
 
 class InstructionFormatError(InstructionsLoadError):

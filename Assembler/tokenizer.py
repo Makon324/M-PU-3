@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from errors import *
+from errors import UnexpectedCharError
 
 
 @dataclass
@@ -13,13 +13,16 @@ class Token:
         line: Line number where the token appears (1-indexed).
         start_column: Starting column position of the token (1-indexed).
     """
+
     type: str
     value: str
     line: int
     start_column: int
 
+
 def make_token(token_type, value, line=1, column=1):
     return Token(type=token_type, value=value, line=line, start_column=column)
+
 
 def make_tokens(to_build: list[tuple]):
     """Helper to build tokens list:
@@ -35,22 +38,24 @@ class AssemblerTokenizer:
     """Converts assembly code into tokens using regular expression patterns."""
 
     TOKEN_SPECIFICATION = (
-        ('COMMENT', r';[^\n]*'),
-        ('LABEL', r'\.[A-Za-z_][A-Za-z0-9_]*:'),
-        ('IDENT', r'\.[A-Za-z_][A-Za-z0-9_]*'),
-        ('REGISTER', r'R[0-9]+'),
-        ('HEX', r'-?0x[0-9A-Fa-f]+'),
-        ('BIN', r'-?0b[01]+'),
-        ('DEC', r'-?[0-9]+'),
-        ('MNEMONIC', r'[A-Za-z]+'),
-        ('NEWLINE', r'\n'),
-        ('SKIP', r'[\t ,]+'),
-        ('MISMATCH', r'.')
+        ("COMMENT", r";[^\n]*"),
+        ("LABEL", r"\.[A-Za-z_][A-Za-z0-9_]*:"),
+        ("IDENT", r"\.[A-Za-z_][A-Za-z0-9_]*"),
+        ("REGISTER", r"R[0-9]+"),
+        ("HEX", r"-?0x[0-9A-Fa-f]+"),
+        ("BIN", r"-?0b[01]+"),
+        ("DEC", r"-?[0-9]+"),
+        ("MNEMONIC", r"[A-Za-z]+"),
+        ("NEWLINE", r"\n"),
+        ("SKIP", r"[\t ,]+"),
+        ("MISMATCH", r"."),
     )
 
     def __init__(self):
         self.token_pattern = re.compile(
-            "|".join(f"(?P<{name}>{pattern})" for name, pattern in self.TOKEN_SPECIFICATION)
+            "|".join(
+                f"(?P<{name}>{pattern})" for name, pattern in self.TOKEN_SPECIFICATION
+            )
         )
 
     def tokenize(self, code: str) -> list[Token]:
@@ -60,7 +65,7 @@ class AssemblerTokenizer:
             code: The assembly code to tokenize.
 
         Returns:
-            List of Token objects representing the lexical elements of the code.
+            List of Token objects representing the lexical elements of code.
 
         Raises:
             UnexpectedCharError: If an unrecognized character is encountered.
@@ -74,27 +79,20 @@ class AssemblerTokenizer:
             value = match.group()
             column = match.start() - line_start + 1
 
-            if token_type == 'NEWLINE':
+            if token_type == "NEWLINE":
                 line_num += 1
                 line_start = match.end()
-            elif token_type in ('SKIP', 'COMMENT'):
+            elif token_type in ("SKIP", "COMMENT"):
                 continue
-            elif token_type == 'MISMATCH':
+            elif token_type == "MISMATCH":
                 raise UnexpectedCharError(
-                    f"Unexpected char {value!r}",
-                    line_num,
-                    column
+                    f"Unexpected char {value!r}", line_num, column
                 )
             else:
                 tokens.append(
                     Token(
-                        type=token_type,
-                        value=value,
-                        line=line_num,
-                        start_column=column
+                        type=token_type, value=value, line=line_num, start_column=column
                     )
                 )
 
         return tokens
-
-

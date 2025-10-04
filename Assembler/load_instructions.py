@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 from functools import lru_cache
 from typing import Any
@@ -220,7 +221,7 @@ class InstructionLoader:
 
         # Validate code template
         InstructionLoader._validate_code_template(
-            instruction["code_template"], mnemonic
+            instruction["code_template"], instruction["operands"], mnemonic
         )
 
     @staticmethod
@@ -291,16 +292,19 @@ class InstructionLoader:
                             )
 
     @staticmethod
-    def _validate_code_template(code_template: str, mnemonic: str) -> None:
+    def _validate_code_template(
+        code_template: str, operands: list[dict[str, Any]], mnemonic: str
+    ) -> None:
         """
-        Validate the code template format and allowed characters.
+        Validate code template against operands.
 
         Args:
-            code_template: The 16-character template string to validate
+            code_template: The 16-character template string
+            operands: List of operand dictionaries
             mnemonic: Instruction mnemonic (for error context)
 
         Raises:
-            InstructionFormatError: If template format is invalid
+            InstructionFormatError: If template placeholders don't match operands
         """
         if (
             not isinstance(code_template, str)
@@ -310,10 +314,31 @@ class InstructionLoader:
                 f"Instruction '{mnemonic}' code_template must be a {InstructionLoader._CODE_TEMPLATE_LENGTH}-character string"
             )
 
-        # Validate template contains only allowed characters
-        for char in code_template:
-            if char not in InstructionLoader._CODE_TEMPLATE_ALLOWED_CHARS:
+        # Create a working copy of the template for validation
+        remaining_template = code_template
+
+        for i, operand in enumerate(operands):
+            operand_type = operand["type"]
+            expected_placeholder = {"reg": "R", "num": "N", "adr": "A"}[operand_type]
+
+            # Find the first occurrence of the expected placeholder
+            pattern = rf"{expected_placeholder}_*"
+            match = re.search(pattern, remaining_template)
+            pos = match.start()
+            length = len(match.group(0))
+
+            if pos == -1:
                 raise InstructionFormatError(
-                    f"Instruction '{mnemonic}' code_template contains invalid character: '{char}'. "
-                    f"Allowed characters are: {InstructionLoader._CODE_TEMPLATE_ALLOWED_CHARS}"
+                    f"Instruction '{mnemonic}' operand {i} (type: {operand_type}) requires "
+                    f"placeholder '{expected_placeholder}' but none found in remaining template: {remaining_template}"
                 )
+
+            # Remove the matched portion from the template (everything up to and including the placeholder)
+            remaining_template = remaining_template[pos + length :]
+
+        # After processing all operands, check if there are any unexpected characters left
+        if not set(remaining_template) <= {"0", "1"}:
+            raise InstructionFormatError(
+                f"Instruction '{mnemonic}' has unmatched placeholders in template. "
+                f"Template: {code_template}, Operands: {[op['type'] for op in operands]}"
+            )

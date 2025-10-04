@@ -1,113 +1,163 @@
-from errors import *
-from load_instructions import *
+from errors import (
+    DuplicateLabelError,
+    ProgramTooLongError,
+    UndefinedLabelError,
+)
+from load_instructions import InstructionLoader
 from utils import get_number, get_register_number
+from constants import AssemblerConstants
+import re
 
 
 class AssemblerCodeGenerator:
-    """Generate machine code from parsed assembly program."""
+    """Generates machine code from parsed assembly program.
+
+    Attributes:
+        instructions (dict): Loaded instruction specifications from json file
+        symbol_table (dict): Mapping of label names to memory addresses
+        program (list): Parsed assembly program
+    """
 
     def __init__(self, program: list[dict]):
-        self.instructions = load_instructions()
+        self.instructions = InstructionLoader.load_instructions()
         self.symbol_table = {}
         self.program = program
 
-    def resolve_labels(self) -> None:
-        """First pass: build symbol table with label addresses"""
+    def _resolve_labels(self) -> None:
+        """First pass: build symbol table with label addresses and validate program length.
+
+        Raises:
+            DuplicateLabelError: If a label is defined multiple times
+            ProgramTooLongError: If program exceeds MAX_PROGRAM_SIZE instructions
+        """
         address = 0
         for line in self.program:
-            if line['type'] == 'label':
-                if line['label'] in self.symbol_table:
-                    raise DuplicateLabelError(f"label {line['label']} already exists", line['line'])
-                self.symbol_table[line['label']] = address
-            elif line['type'] == 'instruction':
+            line_type = line["type"]
+
+            if line_type == "label":
+                if line["label"] in self.symbol_table:
+                    raise DuplicateLabelError(
+                        f"label {line['label']} already exists", line["line"]
+                    )
+                self.symbol_table[line["label"]] = address
+
+            elif line_type == "instruction":
                 address += 1
-                if address > 1024:
+                if address > AssemblerConstants.MAX_PROGRAM_SIZE:
                     raise ProgramTooLongError(
-                        f"Program exceeds maximum size of 1024 instructions (current: {address})",
-                        line['line']
+                        f"Program exceeds maximum size of {AssemblerConstants.MAX_PROGRAM_SIZE} "
+                        f"instructions (current: {address})",
+                        line["line"],
                     )
 
     @staticmethod
-    def int_to_bin(number: int, n_bits: int) -> str:
+    def _int_to_bin(number: int, n_bits: int) -> str:
         """Convert integer to n_bits-wide binary string using U2 for negatives."""
         if number < 0:
             number = (1 << n_bits) + number  # wrap around for negative values
-        return format(number & ((1 << n_bits) - 1), f'0{n_bits}b')
+        return format(number & ((1 << n_bits) - 1), f"0{n_bits}b")
 
     @staticmethod
-    def transform_operand(num: int, transformations: list[str]) -> int:
-        """Apply series of transformations to an operand according to instruction spec."""
+    def _transform_operand(num: int, transformations: list[str] | None = None) -> int:
+        """Apply transformations to numeric operand according to instruction specification.
+
+        Args:
+            num: Original numeric value
+            transformations: List of transformations to apply in order:
+                - 'neq': Logical NOT (0 becomes 1, non-zero becomes 0)
+                - 'div2': Integer division by 2
+                - 'dec': Decrement by 1
+
+        Returns:
+            Transformed numeric value
+        """
         if transformations is None:
             return num
         for transformation in transformations:
-            if transformation == 'neq':
+            if transformation == "neq":
                 num = not num
-            elif transformation == 'div2':
+            elif transformation == "div2":
                 num = num // 2
-            elif transformation == 'dec':
+            elif transformation == "dec":
                 num -= 1
-            else:
-                raise InstructionsError(f"Unknown transformation {transformation}")
         return num
 
     @staticmethod
-    def replace_placeholder(template: str, start_character: str, number: int) -> str:
+    def _replace_placeholder(template: str, start_character: str, number: int) -> str:
         """Replace a placeholder pattern in the template with a binary number."""
-        pos = template.find(start_character)
-        count = 1
-        i = pos + 1
-        while i < len(template) and template[i] == '_':
-            count += 1
-            i += 1
-        return template[:pos] + AssemblerCodeGenerator.int_to_bin(number, count) + template[pos + count:]
+        pattern = rf"{start_character}_*"
+        match = re.search(pattern, template)  # always matches due to validation
+        pos = match.start()
+        length = len(match.group(0))
+        replaced = (
+            template[:pos]
+            + AssemblerCodeGenerator._int_to_bin(number, length)
+            + template[pos + length :]
+        )
+        return replaced
 
     def generate_code(self) -> list[str]:
-        """Second pass: generate machine code"""
+        """Generate machine code.
+
+        Performs two-pass assembly:
+        1. Resolves labels and validates program length
+        2. Generates machine code for each instruction line
+
+        Returns:
+            List of binary strings representing the machine code program
+        """
         machine_code = []
-        self.resolve_labels()
+        self._resolve_labels()
         for line in self.program:
-            if line['type'] == 'instruction':
+            if line["type"] == "instruction":
                 instruction_code = self.generate_instruction(line)
                 machine_code.append(instruction_code)
         return machine_code
 
     def generate_instruction(self, instruction: dict) -> str:
-        """Generate machine code for a single instruction."""
-        mnemonic = instruction['mnemonic'].upper()
+        """Generate machine code for single instruction.
+
+        Args:
+            instruction: Dictionary returned by parser
+
+        Returns:
+            16-bit binary string representing the machine code for this instruction
+
+        Raises:
+
+            UndefinedLabelError: If referenced label doesn't exist in symbol table
+        """
+        mnemonic = instruction["mnemonic"].upper()
         instruction_spec = self.instructions.get(mnemonic)
-        if not instruction_spec:
-            raise InvalidInstructionError(f"Unknown instruction: {mnemonic}")
-        code_template = instruction_spec['code_template']
+        code_template = instruction_spec["code_template"]
         binary_code = code_template
 
         # Process each operand
-        for i, (operand, operand_spec) in enumerate(zip(
-                instruction['arguments'],
-                instruction_spec.get('operands')
-        )):
-            if operand_spec['type'] == 'reg':
+        for i, (operand, operand_spec) in enumerate(
+            zip(instruction["arguments"], instruction_spec.get("operands"))
+        ):
+            if operand_spec["type"] == "reg":
                 reg_num = get_register_number(operand)
-                binary_code = self.replace_placeholder(binary_code, "R", reg_num)
-            elif operand_spec['type'] == 'num':
+                binary_code = self._replace_placeholder(binary_code, "R", reg_num)
+            elif operand_spec["type"] == "num":
                 num = get_number(operand)
-                transformed_num = self.transform_operand(num, operand_spec['transformations'])
-                binary_code = self.replace_placeholder(binary_code, "N", transformed_num)
-            elif operand_spec['type'] == 'adr':
-                if operand.type == 'IDENT':
+                transformed_num = self._transform_operand(
+                    num, operand_spec["transformations"]
+                )
+                binary_code = self._replace_placeholder(
+                    binary_code, "N", transformed_num
+                )
+            elif operand_spec["type"] == "adr":
+                if operand.type == "IDENT":
                     adr = self.symbol_table.get(operand.value)
                     if adr is None:
                         raise UndefinedLabelError(
                             f"Undefined label: {operand.value}",
                             line=operand.line,
-                            column=operand.start_column
+                            column=operand.start_column,
                         )
                 else:
                     adr = get_number(operand)
-                binary_code = self.replace_placeholder(binary_code, "A", adr)
+                binary_code = self._replace_placeholder(binary_code, "A", adr)
 
         return binary_code
-
-
-
-
-

@@ -1,5 +1,4 @@
-from collections import namedtuple
-from errors import *
+from errors import InvalidSyntaxError
 from tokenizer import Token
 
 
@@ -11,7 +10,8 @@ class AssemblerParser:
         pos: Current position in the token list.
         line: Current line number being parsed.
     """
-    _VALID_OPERAND_TYPES = frozenset({'REGISTER', 'DEC', 'HEX', 'BIN', 'IDENT'})
+
+    _VALID_OPERAND_TYPES = frozenset({"REGISTER", "DEC", "HEX", "BIN", "IDENT"})
 
     def __init__(self, tokens: list[Token]):
         self.tokens = tokens
@@ -41,7 +41,8 @@ class AssemblerParser:
             else:
                 raise InvalidSyntaxError(
                     f"Unexpected token type {tok.type} with value {tok.value!r}",
-                    line=tok.line, column=tok.start_column
+                    line=tok.line,
+                    column=tok.start_column,
                 )
         return operands
 
@@ -51,29 +52,30 @@ class AssemblerParser:
         if not tok:
             return None
 
-        if tok.type == 'LABEL':
+        if tok.type == "LABEL":
             return {
                 "type": "label",
-                "label": tok.value.removesuffix(':'),
+                "label": tok.value.removesuffix(":"),
                 "line": tok.line,
-                "column": tok.start_column
+                "column": tok.start_column,
             }
 
-        elif tok.type == 'MNEMONIC':
+        elif tok.type == "MNEMONIC":
             args = self._collect_operands()
             return {
                 "type": "instruction",
-                 "mnemonic": tok.value,
-                 "arguments": args,
-                 "line": tok.line,
-                "column": tok.start_column
+                "mnemonic": tok.value,
+                "arguments": args,
+                "line": tok.line,
+                "column": tok.start_column,
             }
 
         else:
             raise InvalidSyntaxError(
                 f"Unexpected token type {tok.type} with value {tok.value!r}",
-                line=tok.line, column=tok.start_column
-        )
+                line=tok.line,
+                column=tok.start_column,
+            )
 
     def parse(self) -> list[dict]:
         """Parses all tokens into a complete program structure.
@@ -88,6 +90,3 @@ class AssemblerParser:
                 program.append(line)
 
         return program
-
-
-

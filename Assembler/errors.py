@@ -34,40 +34,53 @@ class AssemblerError(Exception):
     def __str__(self):
         return self.message
 
+
 class UnexpectedCharError(AssemblerError):
     """Raised when an unexpected character is encountered in input."""
+
 
 class InvalidSyntaxError(AssemblerError):
     """Raised when invalid syntax is encountered in input."""
 
+
 class InvalidInstructionError(AssemblerError):
     """Raised when an invalid instruction is encountered in input."""
+
 
 class InvalidOperandError(AssemblerError):
     """Raised when an invalid operand is encountered in input."""
 
+
 class InvalidRegisterError(AssemblerError):
     """Raised when an invalid register is encountered in input."""
+
 
 class InvalidAddressError(AssemblerError):
     """Raised when an invalid address is encountered in input."""
 
+
 class ValueOutOfRangeError(AssemblerError):
     """Raised when an invalid value is encountered in input."""
+
 
 class DuplicateLabelError(AssemblerError):
     """Raised duplicate label is encountered in input."""
 
+
 class UndefinedLabelError(AssemblerError):
     """Raised when an undefined label is encountered in input."""
+
 
 class ProgramTooLongError(AssemblerError):
     """Raised when the program exceeds 1024 instructions in length."""
 
 
-class InstructionsError(Exception):
-    """Raised when error is encountered in instructions file."""
-    def __init__(self, message):
-        super().__init__(message)
+# Section: Instructions Loading Errors
 
 
+class InstructionsLoadError(Exception):
+    """Raised when error is encountered during laoding instructions file."""
+
+
+class InstructionFormatError(InstructionsLoadError):
+    """Raised when the JSON is malformed or doesn't match the expected shape."""

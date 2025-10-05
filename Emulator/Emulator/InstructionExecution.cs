@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Reflection;
+using System.Xml.Serialization;
 
 namespace Emulator
 {
@@ -312,10 +313,28 @@ namespace Emulator
                 context.Registers[_destination] = context.Registers[_source];
                 context.ZeroFlag = context.Registers[_destination] == 0;
             }
+        }        
+    }
+
+    internal sealed class ExecuteLDI : BaseExecute
+    {
+        private readonly Register _destination;
+        private readonly byte _immediate;
+
+        public ExecuteLDI(List<Argument> arguments)
+        {
+            _destination = (Register)((RegisterArgument)arguments[0]).Value;
+            _immediate = ((NumberArgument)arguments[1]).Value;
+        }
+
+        protected override void ExecuteInstruction(ref CPUContext context)
+        {
+            context.Registers[_destination] = _immediate;
+            context.ZeroFlag = context.Registers[_destination] == 0;
         }
     }
 
-    
+
 
     #endregion
 
@@ -484,7 +503,7 @@ namespace Emulator
         }
     }
 
-    // Stack operations
+    // Stack Operations
 
     internal sealed class ExecutePSH : BaseExecute
     {

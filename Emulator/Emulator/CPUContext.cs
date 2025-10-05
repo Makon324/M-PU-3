@@ -11,7 +11,6 @@
         public bool Halted { get; set; }
         public PortCollection Ports { get; }
 
-
         public CPUContext()
         {
             Registers = new RegisterCollection();

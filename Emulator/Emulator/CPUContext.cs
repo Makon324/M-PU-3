@@ -9,6 +9,8 @@
         public bool ZeroFlag { get; set; }
         public bool CarryFlag { get; set; }
         public bool Halted { get; set; }
+        public PortCollection Ports { get; }
+
 
         public CPUContext()
         {
@@ -19,6 +21,7 @@
             ZeroFlag = false;
             CarryFlag = false;
             Halted = false;
+            Ports = new PortCollection();
         }
     }
 }

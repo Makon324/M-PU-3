@@ -91,7 +91,7 @@ namespace Emulator
         }
     }
 
-    #region ALU Operations
+    #region ALU And Registers Operations
 
     /// <summary>
     /// Base class for ALU operations operating on only registers.
@@ -243,7 +243,7 @@ namespace Emulator
     }
 
     internal sealed class ExecuteSHFE(List<Argument> arguments)
-    : ExecuteALU(arguments)
+        : ExecuteALU(arguments)
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
@@ -255,7 +255,7 @@ namespace Emulator
     }
 
     internal sealed class ExecuteSEX(List<Argument> arguments)
-    : ExecuteALU(arguments)
+        : ExecuteALU(arguments)
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
@@ -314,6 +314,8 @@ namespace Emulator
             }
         }
     }
+
+    
 
     #endregion
 
@@ -647,6 +649,72 @@ namespace Emulator
     }
 
     #endregion
+
+    #region I/O Operations
+
+    internal sealed class ExecutePST : BaseExecute
+    {
+        private readonly Register _source;
+        private readonly byte _portNumber;
+
+        public ExecutePST(List<Argument> arguments)
+        {
+            _source = (Register)((RegisterArgument)arguments[0]).Value;
+            _portNumber = ((NumberArgument)arguments[1]).Value;
+        }
+
+        protected override void ExecuteInstruction(ref CPUContext context)
+        {
+            context.Ports[_portNumber].PortStore(context.Registers[_source]);
+        }
+    }
+
+    internal sealed class ExecuteDPS : BaseExecute
+    {
+        private readonly Register _sourceA;
+        private readonly Register _sourceB;
+        private readonly byte _portNumber;
+
+        public ExecuteDPS(List<Argument> arguments)
+        {
+            _sourceA = (Register)((RegisterArgument)arguments[0]).Value;
+            _sourceB = (Register)((RegisterArgument)arguments[1]).Value;
+            _portNumber = ((NumberArgument)arguments[2]).Value;
+        }
+
+        protected override void ExecuteInstruction(ref CPUContext context)
+        {
+            context.Ports[_portNumber].PortStore(context.Registers[_sourceA]);
+            context.Ports[(byte)(_portNumber + 1)].PortStore(context.Registers[_sourceB]);
+        }
+    }
+  
+    internal sealed class ExecutePLD : BaseExecute
+    {
+        private readonly Register _destination;
+        private readonly byte _portNumber;
+
+        public ExecutePLD(List<Argument> arguments)
+        {
+            _destination = (Register)((RegisterArgument)arguments[0]).Value;
+            _portNumber = ((NumberArgument)arguments[1]).Value;
+        }
+
+        protected override void ExecuteInstruction(ref CPUContext context)
+        {
+            context.Registers[_destination] = context.Ports[_portNumber].PortLoad();
+            context.ZeroFlag = context.Registers[_destination] == 0;
+        }
+    }
+
+
+
+
+
+
+
+    #endregion
+
 
 
 

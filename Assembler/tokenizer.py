@@ -1,5 +1,7 @@
 import re
 from dataclasses import dataclass
+
+from constants import AssemblerConstants
 from errors import UnexpectedCharError
 
 
@@ -37,24 +39,10 @@ def make_tokens(to_build: list[tuple]):
 class AssemblerTokenizer:
     """Converts assembly code into tokens using regular expression patterns."""
 
-    TOKEN_SPECIFICATION = (
-        ("COMMENT", r";[^\n]*"),
-        ("LABEL", r"\.[A-Za-z_][A-Za-z0-9_]*:"),
-        ("IDENT", r"\.[A-Za-z_][A-Za-z0-9_]*"),
-        ("REGISTER", r"R[0-9]+"),
-        ("HEX", r"-?0x[0-9A-Fa-f]+"),
-        ("BIN", r"-?0b[01]+"),
-        ("DEC", r"-?[0-9]+"),
-        ("MNEMONIC", r"[A-Za-z]+"),
-        ("NEWLINE", r"\n"),
-        ("SKIP", r"[\t ,]+"),
-        ("MISMATCH", r"."),
-    )
-
     def __init__(self):
         self.token_pattern = re.compile(
             "|".join(
-                f"(?P<{name}>{pattern})" for name, pattern in self.TOKEN_SPECIFICATION
+                f"(?P<{name}>{pattern})" for name, pattern in AssemblerConstants.TOKEN_SPECIFICATION
             )
         )
 

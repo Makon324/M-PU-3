@@ -80,14 +80,11 @@ class AssemblerCodeGenerator:
     @staticmethod
     def _replace_placeholder(template: str, start_character: str, number: int) -> str:
         """Replace a placeholder pattern in the template with a binary number."""
-        pattern = rf"{start_character}_*"
-        match = re.search(pattern, template)  # always matches due to validation
-        pos = match.start()
-        length = len(match.group(0))
-        replaced = (
-            template[:pos]
-            + AssemblerCodeGenerator._int_to_bin(number, length)
-            + template[pos + length :]
+        replaced = re.sub(
+            rf"{start_character}_*",
+            lambda m: AssemblerCodeGenerator._int_to_bin(number, len(m.group(0))),
+            template,
+            count=1
         )
         return replaced
 
@@ -101,12 +98,12 @@ class AssemblerCodeGenerator:
         Returns:
             List of binary strings representing the machine code program
         """
-        machine_code = []
         self._resolve_labels()
-        for line in self.program:
-            if line["type"] == "instruction":
-                instruction_code = self.generate_instruction(line)
-                machine_code.append(instruction_code)
+        machine_code = [
+            self.generate_instruction(line)
+            for line in self.program
+            if line["type"] == "instruction"
+        ]
         return machine_code
 
     def generate_instruction(self, instruction: dict) -> str:

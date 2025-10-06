@@ -7,6 +7,7 @@ from load_instructions import InstructionLoader
 from utils import get_number, get_register_number
 from constants import AssemblerConstants
 import re
+from functools import reduce
 
 
 class AssemblerCodeGenerator:
@@ -74,13 +75,7 @@ class AssemblerCodeGenerator:
         if transformations is None:
             return num
 
-        for t in transformations:
-            if t in AssemblerConstants.TRANSFORMATIONS:
-                num = AssemblerConstants.TRANSFORMATIONS[t](num)
-            else:
-                raise ValueError(f"Unknown transformation: {t}")
-
-        return num
+        return reduce(lambda n, t: AssemblerConstants.TRANSFORMATIONS[t](n), transformations, num)
 
     @staticmethod
     def _replace_placeholder(template: str, start_character: str, number: int) -> str:

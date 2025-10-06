@@ -1,3 +1,5 @@
+from unittest import case
+
 from errors import InvalidSyntaxError
 from tokenizer import Token
 
@@ -18,7 +20,7 @@ class AssemblerParser:
         self.pos = 0
         self.line = 0
 
-    def _advance(self) -> Token:
+    def _advance(self) -> Token | None:
         """Advance to the next token and return it."""
         if self.pos >= len(self.tokens):
             return None
@@ -34,48 +36,48 @@ class AssemblerParser:
 
         while current_line == self.line:
             tok = self._advance()
-            if not tok:
-                break
-            elif tok.type in AssemblerParser._VALID_OPERAND_TYPES:
-                operands.append(tok)
-            else:
-                raise InvalidSyntaxError(
-                    f"Unexpected token type {tok.type} with value {tok.value!r}",
-                    line=tok.line,
-                    column=tok.start_column,
-                )
+            match tok:
+                case None:
+                    break
+                case t if t.type in AssemblerParser._VALID_OPERAND_TYPES:
+                    operands.append(t)
+                case t:
+                    raise InvalidSyntaxError(
+                        f"Unexpected token type {t.type} with value {t.value!r}",
+                        line=t.line,
+                        column=t.start_column,
+                    )
         return operands
 
-    def parse_line(self) -> dict:
+    def parse_line(self) -> dict | None:
         """Parse the current line of assembly code."""
         tok = self._advance()
         if not tok:
             return None
 
-        if tok.type == "LABEL":
-            return {
-                "type": "label",
-                "label": tok.value.removesuffix(":"),
-                "line": tok.line,
-                "column": tok.start_column,
-            }
-
-        elif tok.type == "MNEMONIC":
-            args = self._collect_operands()
-            return {
-                "type": "instruction",
-                "mnemonic": tok.value,
-                "arguments": args,
-                "line": tok.line,
-                "column": tok.start_column,
-            }
-
-        else:
-            raise InvalidSyntaxError(
-                f"Unexpected token type {tok.type} with value {tok.value!r}",
-                line=tok.line,
-                column=tok.start_column,
-            )
+        match tok.type:
+            case "LABEL":
+                return {
+                    "type": "label",
+                    "label": tok.value.removesuffix(":"),
+                    "line": tok.line,
+                    "column": tok.start_column,
+                }
+            case "MNEMONIC":
+                args = self._collect_operands()
+                return {
+                    "type": "instruction",
+                    "mnemonic": tok.value,
+                    "arguments": args,
+                    "line": tok.line,
+                    "column": tok.start_column,
+                }
+            case _:
+                raise InvalidSyntaxError(
+                    f"Unexpected token type {tok.type} with value {tok.value!r}",
+                    line=tok.line,
+                    column=tok.start_column,
+                )
 
     def parse(self) -> list[dict]:
         """Parses all tokens into a complete program structure.

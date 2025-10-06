@@ -73,13 +73,13 @@ class AssemblerCodeGenerator:
         """
         if transformations is None:
             return num
-        for transformation in transformations:
-            if transformation == "neq":
-                num = not num
-            elif transformation == "div2":
-                num = num // 2
-            elif transformation == "dec":
-                num -= 1
+
+        for t in transformations:
+            if t in AssemblerConstants.TRANSFORMATIONS:
+                num = AssemblerConstants.TRANSFORMATIONS[t](num)
+            else:
+                raise ValueError(f"Unknown transformation: {t}")
+
         return num
 
     @staticmethod
@@ -136,28 +136,31 @@ class AssemblerCodeGenerator:
         for i, (operand, operand_spec) in enumerate(
             zip(instruction["arguments"], instruction_spec.get("operands"))
         ):
-            if operand_spec["type"] == "reg":
-                reg_num = get_register_number(operand)
-                binary_code = self._replace_placeholder(binary_code, "R", reg_num)
-            elif operand_spec["type"] == "num":
-                num = get_number(operand)
-                transformed_num = self._transform_operand(
-                    num, operand_spec["transformations"]
-                )
-                binary_code = self._replace_placeholder(
-                    binary_code, "N", transformed_num
-                )
-            elif operand_spec["type"] == "adr":
-                if operand.type == "IDENT":
-                    adr = self.symbol_table.get(operand.value)
-                    if adr is None:
-                        raise UndefinedLabelError(
-                            f"Undefined label: {operand.value}",
-                            line=operand.line,
-                            column=operand.start_column,
-                        )
-                else:
-                    adr = get_number(operand)
-                binary_code = self._replace_placeholder(binary_code, "A", adr)
+            match operand_spec["type"]:
+                case "reg":
+                    reg_num = get_register_number(operand)
+                    binary_code = self._replace_placeholder(binary_code, "R", reg_num)
+
+                case "num":
+                    num = get_number(operand)
+                    transformed_num = self._transform_operand(
+                        num, operand_spec["transformations"]
+                    )
+                    binary_code = self._replace_placeholder(
+                        binary_code, "N", transformed_num
+                    )
+
+                case "adr":
+                    if operand.type == "IDENT":
+                        adr = self.symbol_table.get(operand.value)
+                        if adr is None:
+                            raise UndefinedLabelError(
+                                f"Undefined label: {operand.value}",
+                                line=operand.line,
+                                column=operand.start_column,
+                            )
+                    else:
+                        adr = get_number(operand)
+                    binary_code = self._replace_placeholder(binary_code, "A", adr)
 
         return binary_code

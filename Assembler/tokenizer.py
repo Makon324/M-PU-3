@@ -79,20 +79,24 @@ class AssemblerTokenizer:
             value = match.group()
             column = match.start() - line_start + 1
 
-            if token_type == "NEWLINE":
-                line_num += 1
-                line_start = match.end()
-            elif token_type in ("SKIP", "COMMENT"):
-                continue
-            elif token_type == "MISMATCH":
-                raise UnexpectedCharError(
-                    f"Unexpected char {value!r}", line_num, column
-                )
-            else:
-                tokens.append(
-                    Token(
-                        type=token_type, value=value, line=line_num, start_column=column
+            match token_type:
+                case "NEWLINE":
+                    line_num += 1
+                    line_start = match.end()
+                case "SKIP" | "COMMENT":
+                    continue
+                case "MISMATCH":
+                    raise UnexpectedCharError(
+                        f"Unexpected char {value!r}", line_num, column
                     )
-                )
+                case _:
+                    tokens.append(
+                        Token(
+                            type=token_type,
+                            value=value,
+                            line=line_num,
+                            start_column=column,
+                        )
+                    )
 
         return tokens

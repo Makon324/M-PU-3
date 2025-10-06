@@ -87,12 +87,17 @@ class AssemblerValidator:
         Raises:
             InvalidOperandError: If operand type doesn't match specification
         """
-        if operand_spec["type"] == "reg":
-            self._validate_register_operand(operand)
-        elif operand_spec["type"] == "num":
-            self._validate_number_operand(operand, operand_spec)
-        elif operand_spec["type"] == "adr":
-            self._validate_address_operand(operand)
+        match operand_spec["type"]:
+            case "reg":
+                self._validate_register_operand(operand)
+            case "num":
+                self._validate_number_operand(operand, operand_spec)
+            case "adr":
+                self._validate_address_operand(operand)
+            case _:
+                raise InvalidSyntaxError(
+                    f"Unknown operand type: {operand_spec['type']!r}"
+                )
 
     @staticmethod
     def _validate_register_operand(operand: Token) -> None:

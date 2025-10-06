@@ -1,4 +1,5 @@
 from tokenizer import Token
+from typing import Sequence
 
 
 def get_register_number(token: Token) -> int:
@@ -14,12 +15,13 @@ def is_register(token: Token) -> bool:
 
 
 def is_number(token: Token) -> bool:
-    return token.type in ["HEX", "BIN", "DEC"]
+    return token.type in frozenset({"HEX", "BIN", "DEC"})
 
 
 def is_address(token: Token) -> bool:
-    return token.type in ["IDENT", "HEX", "BIN", "DEC"]
+    return token.type in frozenset({"IDENT", "HEX", "BIN", "DEC"})
 
 
-def is_in_range(number: int, range_list) -> bool:
-    return range_list[0] <= number <= range_list[1]
+def is_in_range(number: int, range_list: Sequence[int]) -> bool:
+    lower, upper = range_list
+    return lower <= number <= upper

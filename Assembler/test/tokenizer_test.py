@@ -16,7 +16,7 @@ def test_simple_code():
     tokenizer = AssemblerTokenizer()
     code = textwrap.dedent(
         """\
-        .start:
+        .start:\r
         ADI R1, 123 ; comment
         PST R2, -0x7A
         NOP

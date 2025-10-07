@@ -1,5 +1,3 @@
-from unittest import case
-
 from errors import InvalidSyntaxError
 from tokenizer import Token
 

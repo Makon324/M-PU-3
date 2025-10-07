@@ -5,7 +5,7 @@ from constants import AssemblerConstants
 from errors import UnexpectedCharError
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Token:
     """Represents a lexical token with type, value, and position information.
 
@@ -22,18 +22,15 @@ class Token:
     start_column: int
 
 
-def make_token(token_type, value, line=1, column=1):
+def make_token(token_type: str, value: str, line: int = 1, column: int = 1) -> Token:
     return Token(type=token_type, value=value, line=line, start_column=column)
 
 
-def make_tokens(to_build: list[tuple]):
+def make_tokens(to_build: list[tuple]) -> list[Token]:
     """Helper to build tokens list:
     make_tokens(("MNEMONIC", "MOV", 1, 1), ("REGISTER", "R1", 1, 5))
     """
-    tokens: list[Token] = []
-    for spec in to_build:
-        tokens.append(make_token(*spec))
-    return tokens
+    return [make_token(*spec) for spec in to_build]
 
 
 class AssemblerTokenizer:
@@ -58,13 +55,16 @@ class AssemblerTokenizer:
         Raises:
             UnexpectedCharError: If an unrecognized character is encountered.
         """
-        tokens = []
+        # Normalize Windows newlines to '\n' for consistent line/column accounting.
+        code = code.replace("\r\n", "\n").replace("\r", "\n")
+
+        tokens: list[Token] = []
         line_num = 1
         line_start = 0  # tracks start index of current line
 
         for match in self.token_pattern.finditer(code):
-            token_type = match.lastgroup
-            value = match.group()
+            token_type: str = match.lastgroup
+            value: str = match.group()
             column = match.start() - line_start + 1
 
             match token_type:

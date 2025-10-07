@@ -1,8 +1,8 @@
 class AssemblerConstants:
     MAX_PROGRAM_SIZE = 1024
     NUM_REGISTERS = 8
-    ADDRESS_RANGE = range(0, MAX_PROGRAM_SIZE)
-    REGISTER_RANGE = range(0, NUM_REGISTERS)
+    ADDRESS_RANGE = (0, MAX_PROGRAM_SIZE - 1)
+    REGISTER_RANGE = (0, NUM_REGISTERS - 1)
 
     TRANSFORMATIONS = {
         "neq": lambda x: not x,

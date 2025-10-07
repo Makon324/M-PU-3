@@ -110,7 +110,8 @@ class AssemblerValidator:
             )
 
         reg_num = get_register_number(operand)
-        if not reg_num in AssemblerConstants.REGISTER_RANGE:
+        min_reg, max_reg = AssemblerConstants.REGISTER_RANGE
+        if not (min_reg <= reg_num <= max_reg):
             raise InvalidRegisterError(
                 f"Invalid register number {reg_num}. Must be between 0 and 7",
                 line=operand.line,
@@ -152,7 +153,8 @@ class AssemblerValidator:
 
         if is_number(operand):
             number = get_number(operand)
-            if not number in AssemblerConstants.ADDRESS_RANGE:
+            min_addr, max_addr = AssemblerConstants.ADDRESS_RANGE
+            if not (min_addr <= number <= max_addr):
                 raise InvalidAddressError(
                     f"Invalid address. Must be between 0 and 1023",
                     line=operand.line,

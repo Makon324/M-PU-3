@@ -94,7 +94,7 @@ namespace Emulator
         private static string? _cache = null;
     }
 
-    internal record Token(string Type, string Value, int Line, int StartColumn);
+    internal readonly record struct Token(string Type, string Value, int Line, int StartColumn);
     internal enum StatementType
     {
         LABEL,
@@ -370,6 +370,9 @@ namespace Emulator
             return compiledProgram;
         }
 
+        /// <summary>
+        /// Converts a token to a strongly-typed argument based on the specification.        
+        /// </summary>
         private static Argument TokenToArgument(Token token, string specification, IReadOnlyDictionary<string, ushort> labels)
         {
             switch (specification)
@@ -387,7 +390,7 @@ namespace Emulator
                     {
                         return new AddressArgument((ushort)NumParse(token.Value));
                     }
-                default:
+                default:  // Should not happen, as arguments are already validated by python validator
                     throw new InvalidOperationException($"Unknown argument specification: {specification}");
             }
         }
@@ -425,9 +428,8 @@ namespace Emulator
                 throw new FileNotFoundException($"Instructions specification file not found: {jsonPath}", jsonPath);
 
             var jsonText = File.ReadAllText(jsonPath, Encoding.UTF8);
-
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var instructions = JsonSerializer.Deserialize<List<Instr>>(jsonText, options)
+            
+            var instructions = JsonSerializer.Deserialize<List<Instr>>(jsonText, _serializerOptions)
                 ?? throw new InvalidOperationException($"Failed to deserialize instructions from '{jsonPath}'.");
 
             var dict = instructions
@@ -438,9 +440,12 @@ namespace Emulator
             return dict;
         }
 
-        // records just for deserializing instructions.json
-        internal record Operd(string Type);
-        internal record Instr(string Mnemonic, List<Operd> Operands);
+        // Cached options for JSON deserialization
+        private static readonly JsonSerializerOptions _serializerOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+        // Records just for deserializing instructions.json
+        internal readonly record struct Operd(string Type);
+        internal readonly record struct Instr(string Mnemonic, List<Operd> Operands);
     }
 
 

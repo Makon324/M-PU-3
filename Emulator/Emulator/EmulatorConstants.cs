@@ -4,6 +4,7 @@
     {
         public const int REGISTER_COUNT = 8;
         public const int RAM_SIZE = 256;
+        public const int IO_PORT_COUNT = 256;
         public const int MAX_PROGRAM_SIZE = 1024;
         public const int INSTRUCTION_PIPELINE_SIZE = 3;
 

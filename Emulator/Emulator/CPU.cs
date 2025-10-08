@@ -4,9 +4,9 @@
     {
         private CPUContext _context;
         private readonly InstructionPipeline _pipeline;
-        private readonly IReadOnlyList<Instruction> _program;
+        private readonly Program _program;
 
-        public CPU(IReadOnlyList<Instruction> program)
+        public CPU(Program program)
         {
             _context = new CPUContext();
             _pipeline = new InstructionPipeline();
@@ -40,7 +40,7 @@
 
         private Instruction FetchInstruction()
         {
-            if (_context.ProgramCounter.Value >= _program.Count)
+            if (_context.ProgramCounter.Value >= _program.Length)
                 throw new InvalidOperationException("Program counter beyond loaded program");
 
             return _program[_context.ProgramCounter.Value];

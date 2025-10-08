@@ -65,7 +65,7 @@
         /// Flushes the instruction pipeline with NOP (No Operation) instructions, 
         /// executing instructions in the pipeline.
         /// </summary>
-        /// <remarks>Used before branch instructions.</remarks>
+        /// <remarks>Used before control flow instructions.</remarks>
         private void FlushPipelineWithNops()
         {
             for (int i = 0; i < Architecture.INSTRUCTION_PIPELINE_SIZE - 1; i++)
@@ -78,7 +78,7 @@
         /// Executes a single instruction.
         /// </summary>
         /// <param name="instruction">Instruction to execute.</param>
-        /// <param name="advancePC">Whether advance PC after executing the instruction.</param>
+        /// <param name="advancePC">Whether advance Program Counter (PC) after executing the instruction.</param>
         private void ExecuteInstruction(Instruction instruction, bool advancePC = true)
         {
             BaseExecute toExecute = ExecuteFactory.GetExecute(instruction);

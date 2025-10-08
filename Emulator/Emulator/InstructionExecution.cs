@@ -76,6 +76,7 @@ namespace Emulator
 
     #region Instruction Implementations
 
+    // No Opetation instruction
     internal sealed class ExecuteNOP : BaseExecute
     {
         protected override void ExecuteInstruction(ref CPUContext context)
@@ -84,6 +85,7 @@ namespace Emulator
         }
     }
 
+    // Halt instruction
     internal sealed class ExecuteHLT : BaseExecute
     {
         protected override void ExecuteInstruction(ref CPUContext context)
@@ -131,16 +133,18 @@ namespace Emulator
         /// </summary>
         protected static (byte result, bool carry) GetResultAndCarry(int result)
         {
-            byte truncatedResult = (byte)(result & 0xFF);
-            bool carry = result > 0xFF;
+            byte truncatedResult = (byte)(result & ALL_BTIS);
+            bool carry = result > ALL_BTIS;
             return (truncatedResult, carry);
         }
 
         // Helpers for calculations
         protected const byte SIGN_BIT = 0x80;
         protected const byte CARRY_BIT = 0x01;
+        protected const byte ALL_BTIS = 0xFF;
     }
 
+    // Add instruction
     internal sealed class ExecuteADD(List<Argument> arguments) 
         : ExecuteALU(arguments)
     {
@@ -151,6 +155,7 @@ namespace Emulator
         }
     }
 
+    // Add with Carry instruction
     internal sealed class ExecuteADC(List<Argument> arguments)
         : ExecuteALU(arguments)
     {
@@ -161,6 +166,7 @@ namespace Emulator
         }
     }
 
+    // Subtract instruction
     internal sealed class ExecuteSUB(List<Argument> arguments)
         : ExecuteALU(arguments)
     {
@@ -171,6 +177,7 @@ namespace Emulator
         }
     }
 
+    // Subtract with Carry instruction
     internal sealed class ExecuteSUBC(List<Argument> arguments)
         : ExecuteALU(arguments)
     {
@@ -181,6 +188,7 @@ namespace Emulator
         }
     }
 
+    // Bitwise AND instruction
     internal sealed class ExecuteAND(List<Argument> arguments)
         : ExecuteALU(arguments)
     {
@@ -191,6 +199,7 @@ namespace Emulator
         }
     }
 
+    // Bitwise OR instruction
     internal sealed class ExecuteOR(List<Argument> arguments)
         : ExecuteALU(arguments)
     {
@@ -201,6 +210,7 @@ namespace Emulator
         }
     }
 
+    // Bitwise XOR instruction
     internal sealed class ExecuteXOR(List<Argument> arguments)
         : ExecuteALU(arguments)
     {
@@ -211,6 +221,7 @@ namespace Emulator
         }
     }
 
+    // Bitwise NOT instruction
     internal sealed class ExecuteNOT(List<Argument> arguments)
         : ExecuteALU(arguments)
     {
@@ -221,6 +232,7 @@ namespace Emulator
         }
     }
 
+    // Shift Right instruction
     internal sealed class ExecuteSHFT(List<Argument> arguments)
         : ExecuteALU(arguments)
     {
@@ -232,6 +244,7 @@ namespace Emulator
         }
     }
 
+    // Shift Right with Carry instruction
     internal sealed class ExecuteSHFC(List<Argument> arguments)
         : ExecuteALU(arguments)
     {
@@ -243,6 +256,7 @@ namespace Emulator
         }
     }
 
+    // Shift Right with Sign Extend instruction
     internal sealed class ExecuteSHFE(List<Argument> arguments)
         : ExecuteALU(arguments)
     {
@@ -255,17 +269,19 @@ namespace Emulator
         }
     }
 
+    // Sign Extend instruction
     internal sealed class ExecuteSEX(List<Argument> arguments)
         : ExecuteALU(arguments)
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
             byte signBit = (byte)(a & SIGN_BIT);
-            byte result = signBit == 0 ? (byte)0 : (byte)0xFF;
+            byte result = signBit == 0 ? (byte)0 : (byte)ALL_BTIS;
             return (result, false);
         }
     }
 
+    // Move instruction
     internal sealed class ExecuteMOV(List<Argument> arguments) 
         : ExecuteALU(arguments)
     {
@@ -275,6 +291,7 @@ namespace Emulator
         }
     }
 
+    // Conditional Move instruction
     internal sealed class ExecuteMOVC : BaseExecute
     {
         private readonly Register _destination;
@@ -316,6 +333,7 @@ namespace Emulator
         }        
     }
 
+    // Load Immediate instruction
     internal sealed class ExecuteLDI : BaseExecute
     {
         private readonly Register _destination;
@@ -357,6 +375,7 @@ namespace Emulator
         }
     }
 
+    // Memory Store instruction
     internal sealed class ExecuteMST : ExecuteMemoryWrite
     {
         private readonly byte _address;
@@ -372,6 +391,7 @@ namespace Emulator
         }
     }
 
+    // Memory Store Pointer instruction
     internal sealed class ExecuteMSP : ExecuteMemoryWrite
     {
         private readonly Register _pointerRegister;
@@ -389,6 +409,7 @@ namespace Emulator
         }
     }
 
+    // Memory Store Stack instruction
     internal sealed class ExecuteMSS : ExecuteMemoryWrite
     {
         private readonly byte _address;
@@ -404,6 +425,7 @@ namespace Emulator
         }
     }
 
+    // Memory Store Pointer, Stack instruction
     internal sealed class ExecuteMSPS : ExecuteMemoryWrite
     {
         private readonly Register _pointerRegister;
@@ -439,6 +461,7 @@ namespace Emulator
         }
     }
 
+    // Memory Load instruction
     internal sealed class ExecuteMLD : ExecuteMemoryRead
     {
         private readonly byte _address;
@@ -454,6 +477,7 @@ namespace Emulator
         }
     }
 
+    // Memory Load Pointer instruction
     internal sealed class ExecuteMLP : ExecuteMemoryRead
     {
         private readonly Register _pointerRegister;
@@ -471,6 +495,7 @@ namespace Emulator
         }
     }
 
+    // Memory Load Stack instruction
     internal sealed class ExecuteMLS : ExecuteMemoryRead
     {
         private readonly byte _address;
@@ -486,6 +511,7 @@ namespace Emulator
         }
     }
 
+    // Memory Load Pointer, Stack instruction
     internal sealed class ExecuteMLPS : ExecuteMemoryRead
     {
         private readonly Register _pointerRegister;
@@ -503,8 +529,9 @@ namespace Emulator
         }
     }
 
-    // Stack Operations
+    /* Stack Operations */
 
+    // Push Value Stack instruction
     internal sealed class ExecutePSH : BaseExecute
     {
         private readonly byte _value;
@@ -521,6 +548,7 @@ namespace Emulator
         }
     }
 
+    // Push Register Stack instruction
     internal sealed class ExecutePHR : BaseExecute
     {
         private readonly Register _source;
@@ -537,6 +565,7 @@ namespace Emulator
         }
     }
 
+    // Pop Stack instruction (decrement stack by Frame Size)
     internal sealed class ExecutePOP : BaseExecute
     {
         private readonly byte _frameSize;
@@ -552,6 +581,7 @@ namespace Emulator
         }
     }
 
+    // Push Multiple instruction (increment stack by Frame Size)
     internal sealed class ExecutePSHM : BaseExecute
     {
         private readonly byte _frameSize;
@@ -571,6 +601,7 @@ namespace Emulator
 
     #region Control Flow Operations
 
+    // Jump instruction
     internal sealed class ExecuteJMP : BaseExecute
     {
         private readonly ushort _address;
@@ -587,7 +618,8 @@ namespace Emulator
 
         public override bool IsControlFlowInstruction => true;
     }
-    
+
+    // Conditional Branch instruction
     internal sealed class ExecuteBRH : BaseExecute
     {
         private readonly byte _cond;
@@ -632,6 +664,7 @@ namespace Emulator
         public override bool IsControlFlowInstruction => true;
     }
 
+    // Call instruction
     internal sealed class ExecuteCAL : BaseExecute
     {
         private readonly ushort _address;
@@ -649,6 +682,7 @@ namespace Emulator
         public override bool IsControlFlowInstruction => true;
     }
 
+    // Return instruction
     internal sealed class ExecuteRET : BaseExecute
     {
         private readonly byte _frameSize;
@@ -671,6 +705,7 @@ namespace Emulator
 
     #region I/O Operations
 
+    // Port Store instruction
     internal sealed class ExecutePST : BaseExecute
     {
         private readonly Register _source;
@@ -688,6 +723,7 @@ namespace Emulator
         }
     }
 
+    // Dual Port Store instruction
     internal sealed class ExecuteDPS : BaseExecute
     {
         private readonly Register _sourceA;
@@ -703,11 +739,19 @@ namespace Emulator
 
         protected override void ExecuteInstruction(ref CPUContext context)
         {
-            context.Ports[_portNumber].PortStore(context.Registers[_sourceA]);
-            context.Ports[(byte)(_portNumber + 1)].PortStore(context.Registers[_sourceB]);
+            var portA = context.Ports[_portNumber]
+                ?? throw new InvalidOperationException($"Port {_portNumber} not mapped to any device.");
+
+            var nextPortIndex = (byte)(_portNumber + 1);
+            var portB = context.Ports[nextPortIndex]
+                ?? throw new InvalidOperationException($"Port {nextPortIndex} not mapped to any device.");
+
+            portA.PortStore(context.Registers[_sourceA]);
+            portB.PortStore(context.Registers[_sourceB]);
         }
     }
-  
+
+    // Port Load instruction
     internal sealed class ExecutePLD : BaseExecute
     {
         private readonly Register _destination;
@@ -721,7 +765,10 @@ namespace Emulator
 
         protected override void ExecuteInstruction(ref CPUContext context)
         {
-            context.Registers[_destination] = context.Ports[_portNumber].PortLoad();
+            var port = context.Ports[_portNumber]
+                ?? throw new InvalidOperationException($"Port {_portNumber} not mapped to any device.");
+
+            context.Registers[_destination] = port.PortLoad();
             context.ZeroFlag = context.Registers[_destination] == 0;
         }
     }

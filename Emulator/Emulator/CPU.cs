@@ -14,6 +14,8 @@
             _program = program;
         }
 
+        public ref CPUContext Context => ref _context;
+
         /// <summary>
         /// Starts program execution, advancing the instruction pipeline and executing instructions until a Halt instruction is encountered.
         /// </summary>

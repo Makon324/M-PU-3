@@ -17,7 +17,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Emulator\Emulator.csproj" />
+    <Reference Include="Emulator">
+      <HintPath>..\Emulator\obj\Debug\net8.0\Emulator.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

@@ -92,6 +92,8 @@ namespace Emulator
         {
             context.Halted = true;
         }
+
+        public override bool IsControlFlowInstruction => true;
     }
 
     #region ALU And Registers Operations

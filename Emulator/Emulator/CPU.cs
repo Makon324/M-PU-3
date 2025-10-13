@@ -21,6 +21,8 @@
         /// </summary>
         public void Run()
         {
+            StartPipeline();
+
             while (!_context.Halted)
             {
                 Instruction nextInstruction = FetchInstruction();
@@ -38,7 +40,15 @@
                     ExecutePipelineInstruction(nextInstruction);
                 }
             }
-        }        
+        }
+        
+        private void StartPipeline()
+        {
+            for (int i = 0; i < Architecture.INSTRUCTION_PIPELINE_SIZE; i++)
+            {
+                ExecutePipelineInstruction(new Instruction("NOP"), advancePC: false);
+            }
+        }
 
         private Instruction FetchInstruction()
         {

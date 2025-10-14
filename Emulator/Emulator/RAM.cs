@@ -39,12 +39,20 @@
         {
             get
             {
-                byte actualIndex = (byte)index.GetOffset(Architecture.RAM_SIZE);
+                int actualIndex = index.GetOffset(Architecture.RAM_SIZE);
+                if(actualIndex >= Architecture.RAM_SIZE)
+                    throw new ArgumentOutOfRangeException(nameof(index), 
+                        $"Index {index} maps to {actualIndex}, which is outside valid range 0..{_backing.Length - 1}.");
+
                 return this[actualIndex];
             }
             set
             {
-                byte actualIndex = (byte)index.GetOffset(Architecture.RAM_SIZE);
+                int actualIndex = index.GetOffset(Architecture.RAM_SIZE);
+                if (actualIndex >= Architecture.RAM_SIZE)
+                    throw new ArgumentOutOfRangeException(nameof(index),
+                        $"Index {index} maps to {actualIndex}, which is outside valid range 0..{_backing.Length - 1}.");
+
                 this[actualIndex] = value;
             }
         }

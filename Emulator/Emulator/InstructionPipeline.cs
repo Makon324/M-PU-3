@@ -26,5 +26,13 @@
             _pipeline.Enqueue(nextInstruction);
             return _pipeline.Dequeue();
         }
+
+        /// <summary>
+        /// Gets the current state of the instruction pipeline as an array.
+        /// </summary>
+        public Instruction[] GetPipeline()
+        {
+            return _pipeline.ToArray();
+        }
     }
 }

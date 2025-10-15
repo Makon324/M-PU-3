@@ -20,18 +20,10 @@
         {
             get
             {
-                if (index >= _backing.Length)
-                    throw new ArgumentOutOfRangeException(nameof(index),
-                        $"Index {index} is beyond memory capacity {Architecture.RAM_SIZE}");
-
                 return _backing[index];
             }
             set
             {
-                if (index >= _backing.Length)
-                    throw new ArgumentOutOfRangeException(nameof(index),
-                        $"Index {index} is beyond memory capacity {Architecture.RAM_SIZE}");
-
                 _backing[index] = value;
             }
         }
@@ -40,20 +32,20 @@
             get
             {
                 int actualIndex = index.GetOffset(Architecture.RAM_SIZE);
-                if(actualIndex >= Architecture.RAM_SIZE)
+                if(actualIndex >= Architecture.RAM_SIZE || actualIndex < 0)
                     throw new ArgumentOutOfRangeException(nameof(index), 
-                        $"Index {index} maps to {actualIndex}, which is outside valid range 0..{_backing.Length - 1}.");
+                        $"Index {index} maps to {actualIndex}, which is outside valid range 0..{Architecture.RAM_SIZE - 1}.");
 
-                return this[actualIndex];
+                return this[(byte)actualIndex];
             }
             set
             {
                 int actualIndex = index.GetOffset(Architecture.RAM_SIZE);
-                if (actualIndex >= Architecture.RAM_SIZE)
+                if (actualIndex >= Architecture.RAM_SIZE || actualIndex < 0)
                     throw new ArgumentOutOfRangeException(nameof(index),
-                        $"Index {index} maps to {actualIndex}, which is outside valid range 0..{_backing.Length - 1}.");
+                        $"Index {index} maps to {actualIndex}, which is outside valid range 0..{Architecture.RAM_SIZE - 1}.");
 
-                this[actualIndex] = value;
+                this[(byte)actualIndex] = value;
             }
         }
 

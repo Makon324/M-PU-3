@@ -12,7 +12,6 @@
         public ushort Value
         {
             get => _programCounter;
-            set => _programCounter = value;
         }
 
         public void Increment()

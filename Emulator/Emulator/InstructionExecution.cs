@@ -721,6 +721,9 @@ namespace Emulator
 
         protected override void ExecuteInstruction(ref CPUContext context)
         {
+            if (context.Ports[_portNumber] == null)
+                throw new InvalidOperationException($"Port {_portNumber} not mapped to any device.");
+
             context.Ports[_portNumber].PortStore(context.Registers[_source]);
         }
     }

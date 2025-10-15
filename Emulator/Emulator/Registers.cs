@@ -3,7 +3,7 @@
     /// <summary>
     /// Represents adresses of CPU registers.
     /// </summary>
-    enum Register
+    public enum Register
     {
         R0 = 0,
         R1 = 1,
@@ -46,13 +46,21 @@
         {
             get
             {
-                byte actualIndex = (byte)index.GetOffset(Architecture.REGISTER_COUNT);
-                return this[actualIndex];
+                int actualIndex = index.GetOffset(Architecture.REGISTER_COUNT);
+                if(actualIndex >= Architecture.REGISTER_COUNT || actualIndex < 0)
+                    throw new ArgumentOutOfRangeException(nameof(index),
+                        $"Index {index} maps to {actualIndex}, which is outside valid range 0..{Architecture.REGISTER_COUNT - 1}.");
+
+                return this[(Register)actualIndex];
             }
             set
             {
-                byte actualIndex = (byte)index.GetOffset(Architecture.REGISTER_COUNT);
-                this[actualIndex] = value;
+                int actualIndex = index.GetOffset(Architecture.REGISTER_COUNT);
+                if (actualIndex >= Architecture.REGISTER_COUNT || actualIndex < 0)
+                    throw new ArgumentOutOfRangeException(nameof(index),
+                        $"Index {index} maps to {actualIndex}, which is outside valid range 0..{Architecture.REGISTER_COUNT - 1}.");
+
+                this[(Register)actualIndex] = value;
             }
         }
 

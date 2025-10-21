@@ -174,7 +174,7 @@ namespace Emulator
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
-            int result = a + ~b + 1;
+            int result = a + (byte)~b + 1;
             return GetResultAndCarry(result);
         }
     }
@@ -185,7 +185,7 @@ namespace Emulator
     {
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
-            int result = a + ~b + carryIn;
+            int result = a + (byte)~b + carryIn;
             return GetResultAndCarry(result);
         }
     }

@@ -14,13 +14,13 @@ namespace Emulator
         /// </summary>
         /// <param name="path">The file path to the assembly program.</param>
         /// <returns>
-        /// Program in the form of a List of <see cref="Instruction">
+        /// Program in the form of a List of <see cref="Instruction"> in the form of a <see cref="Program"/>.
         /// </returns>
         /// <exception cref="ArgumentException">Thrown when the path is null or empty.</exception>
         /// <exception cref="FileNotFoundException">Thrown when the specified file does not exist.</exception>
         /// <exception cref="ProgramLoadException">Thrown when file reading, parsing, validation, or compilation fails.
         /// </exception>
-        public static IReadOnlyList<Instruction> LoadProgram(string path)
+        public static Program LoadProgram(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("Path cannot be null or empty", nameof(path));
@@ -40,7 +40,7 @@ namespace Emulator
 
                 var (labels, instructionStatements) = ProgramCompiler.ResolveLabels(statements, path);
                 var program = ProgramCompiler.CompileProgram(labels, instructionStatements);
-                return program;
+                return new Program(program);
             }
             catch (ProgramLoadException)
             {

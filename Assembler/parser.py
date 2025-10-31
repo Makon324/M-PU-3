@@ -32,19 +32,24 @@ class AssemblerParser:
         operands = []
         current_line = self.line
 
-        while current_line == self.line:
+        while True:
+            prev_pos = self.pos
+            prev_line = self.line
             tok = self._advance()
-            match tok:
-                case None:
-                    break
-                case t if t.type in AssemblerParser._VALID_OPERAND_TYPES:
-                    operands.append(t)
-                case t:
-                    raise InvalidSyntaxError(
-                        f"Unexpected token type {t.type} with value {t.value!r}",
-                        line=t.line,
-                        column=t.start_column,
-                    )
+            if tok is None:
+                break
+            if tok.line != current_line:
+                self.pos = prev_pos
+                self.line = prev_line
+                break
+            if tok.type in AssemblerParser._VALID_OPERAND_TYPES:
+                operands.append(tok)
+            else:
+                raise InvalidSyntaxError(
+                    f"Unexpected token type {tok.type} with value {tok.value!r}",
+                    line=tok.line,
+                    column=tok.start_column,
+                )
         return operands
 
     def parse_line(self) -> dict | None:

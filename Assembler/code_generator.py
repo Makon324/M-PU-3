@@ -135,9 +135,12 @@ class AssemblerCodeGenerator:
 
                 case "num":
                     num = get_number(operand)
-                    transformed_num = self._transform_operand(
-                        num, operand_spec["transformations"]
-                    )
+                    if "transformations" in operand_spec:
+                        transformed_num = self._transform_operand(
+                            num, operand_spec["transformations"]
+                        )
+                    else:
+                        transformed_num = num
                     binary_code = self._replace_placeholder(
                         binary_code, "N", transformed_num
                     )

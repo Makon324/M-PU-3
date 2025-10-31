@@ -90,7 +90,7 @@
         }
 
         /// <summary>
-        /// Fetches the instruction at the adress of the current Program Counter (PC).
+        /// Fetches the instruction at the address of the current Program Counter (PC).
         /// </summary>
         private Instruction FetchInstruction()
         {

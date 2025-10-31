@@ -91,8 +91,103 @@ namespace Emulator.Tests
             Assert.Throws<InvalidOperationException>(() => cpu.Run());
         }
 
+        [Fact]
+        public void Step_StartPipeline_FillsPipelineWithNops()
+        {
+            var program = TestHelpers.CreateProgram(new Instruction("HLT"));
+            var cpu = new CPU(program);
 
+            // Manually call StartPipeline to simulate initial state
+            typeof(CPU).GetMethod("StartPipeline", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(cpu, null);
 
+            // Pipeline should be filled with NOPs; no execution yet
+            Assert.Equal(0, cpu.Context.ProgramCounter.Value);
+            Assert.False(cpu.Context.Halted);
+        }
+
+        [Fact]
+        public void Step_ControlFlow_FlushesPipelineWithNops()
+        {
+            var program = TestHelpers.CreateProgram(
+                new Instruction("JMP", new Argument[] { new AddressArgument(2) }), // Jump to HLT, skipping NOP
+                new Instruction("NOP"),
+                new Instruction("HLT")
+            );
+            var cpu = new CPU(program);
+
+            // Start pipeline
+            typeof(CPU).GetMethod("StartPipeline", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(cpu, null);
+
+            // Step through start and flush pipeline before control flow
+            for (int i = 0; i < Architecture.INSTRUCTION_PIPELINE_SIZE; i++)
+            {
+                cpu.Step();
+            }
+
+            cpu.Step(); // Execute JMP
+            Assert.Equal(2, cpu.Context.ProgramCounter.Value); // Jumped to address 2
+
+            // Executes NOPs after JMP as result of flush
+            for (int i = 0; i < Architecture.INSTRUCTION_PIPELINE_SIZE; i++)
+            {
+                cpu.Step();
+            }
+
+            // Next Step executes HLT
+            cpu.Step();
+            Assert.True(cpu.Context.Halted);
+        }
+
+        [Fact]
+        public void Step_WhenHalted_DoesNothing()
+        {
+            var program = TestHelpers.CreateProgram(new Instruction("HLT"));
+            var cpu = new CPU(program);
+
+            cpu.Run(); // Halt the CPU
+
+            var initialPc = cpu.Context.ProgramCounter.Value;
+            cpu.Step();
+
+            Assert.True(cpu.Context.Halted);
+            Assert.Equal(initialPc, cpu.Context.ProgramCounter.Value); // No change
+        }
+
+        [Fact]
+        public void Step_MultipleSteps_ExecutesSequenceCorrectly()
+        {
+            var program = TestHelpers.CreateProgram(
+                new Instruction("LDI", new Argument[] { new RegisterArgument((byte)Register.R1), new NumberArgument(5) }),
+                new Instruction("LDI", new Argument[] { new RegisterArgument((byte)Register.R2), new NumberArgument(3) }),
+                new Instruction("ADD", new Argument[] { new RegisterArgument((byte)Register.R3), new RegisterArgument((byte)Register.R1), new RegisterArgument((byte)Register.R2) }),
+                new Instruction("HLT")
+            );
+            var cpu = new CPU(program);
+
+            // Start pipeline
+            typeof(CPU).GetMethod("StartPipeline", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.Invoke(cpu, null);
+
+            // Step through pipeline stages
+            for (int i = 0; i < Architecture.INSTRUCTION_PIPELINE_SIZE; i++)
+            {
+                cpu.Step();
+            }
+            cpu.Step(); // Execute LDI R1
+            Assert.Equal(5, cpu.Context.Registers[Register.R1]);
+            
+            cpu.Step(); // Execute LDI R2
+            Assert.Equal(3, cpu.Context.Registers[Register.R2]);
+
+            cpu.Step(); // Execute ADD
+            Assert.Equal(8, cpu.Context.Registers[Register.R3]);
+
+            // Step to execute HLT
+            for (int i = 0; i < Architecture.INSTRUCTION_PIPELINE_SIZE; i++)
+            {
+                cpu.Step();
+            }
+            Assert.True(cpu.Context.Halted);
+        }
 
 
     }

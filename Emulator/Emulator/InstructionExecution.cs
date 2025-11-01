@@ -551,11 +551,11 @@ namespace Emulator
     }
 
     // Push Register Stack instruction
-    internal sealed class ExecutePHR : BaseExecute
+    internal sealed class ExecutePSHR : BaseExecute
     {
         private readonly Register _source;
 
-        public ExecutePHR(List<Argument> arguments)
+        public ExecutePSHR(List<Argument> arguments)
         {
             _source = (Register)((RegisterArgument)arguments[0]).Value;
         }

@@ -1,6 +1,8 @@
 ﻿using Python.Runtime;
+using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 
@@ -164,23 +166,24 @@ namespace Emulator
         /// <returns>A list of <see cref="ProgramStatement"/> objects representing the parsed and validated program.</returns>
         /// <exception cref="ProgramLoadException">Thrown when transformation fails due to parsing, validation, or other errors.</exception>
         public List<ProgramStatement> TransformProgram(string assemblyCode, string filePath /*just for exceptions*/)
-        {           
+        {
             try
             {
                 string rootPath = ProjectPathResolver.FindSolutionRoot();
                 string assemblerPath = Path.Combine(rootPath, Paths.PYTHON_ASSEMBLER);
-                string tokenizerPath = Path.Combine(rootPath, Paths.PYTHON_TOKENIZER);
-                string parserPath = Path.Combine(rootPath, Paths.PYTHON_PARSER);
-                string validatorPath = Path.Combine(rootPath, Paths.PYTHON_VALIDATOR);
+                
+                string tokenizerModule = "tokenizer";
+                string parserModule = "parser";
+                string validatorModule = "validator";
 
                 InitializePython();
                 AddToPythonPath(assemblerPath);
 
                 using (Py.GIL())
                 {
-                    using (var tokenizer = Py.Import(tokenizerPath))
-                    using (var parser = Py.Import(parserPath))
-                    using (var validator = Py.Import(validatorPath))
+                    using (var tokenizer = Py.Import(tokenizerModule))
+                    using (var parser = Py.Import(parserModule))
+                    using (var validator = Py.Import(validatorModule))
                     using (var tokenizerInstance = tokenizer.InvokeMethod("AssemblerTokenizer"))
                     using (var tokens = tokenizerInstance.InvokeMethod("tokenize", assemblyCode.ToPython()))
                     using (var parserInstance = parser.InvokeMethod("AssemblerParser", tokens))
@@ -218,22 +221,22 @@ namespace Emulator
 
             foreach (dynamic item in pythonList)
             {
-                string type = item.type.ToString();
+                string type = item["type"].ToString();
 
                 if (type == "label")
                 {
                     var labelStmt = new LabelStatement(
-                        item.label.ToString(),
-                        int.Parse(item.line.ToString()),
-                        int.Parse(item.column.ToString())
+                        item["label"].ToString(),
+                        int.Parse(item["line"].ToString()),
+                        int.Parse(item["column"].ToString())
                     );
                     result.Add(labelStmt);
                 }
                 else if (type == "instruction")
-                {                    
+                {
                     // Convert arguments (list of tokens)
                     List<Token> arguments = new();
-                    foreach (dynamic arg in item.arguments)
+                    foreach (dynamic arg in item["arguments"])
                     {
                         var token = new Token(
                             arg.type.ToString(),
@@ -245,10 +248,10 @@ namespace Emulator
                     }
 
                     var instructionStmt = new InstructionStatement(
-                        item.mnemonic.ToString(),
+                        item["mnemonic"].ToString(),
                         arguments,
-                        int.Parse(item.line.ToString()),
-                        int.Parse(item.column.ToString())
+                        int.Parse(item["line"].ToString()),
+                        int.Parse(item["column"].ToString())
                     );
 
                     result.Add(instructionStmt);
@@ -264,7 +267,7 @@ namespace Emulator
             {
                 dynamic sys = Py.Import("sys");
 
-                if (!sys.path.Contains(path))
+                if (!(bool)sys.path.__contains__(path))
                 {
                     sys.path.insert(0, path);
                 }
@@ -275,6 +278,8 @@ namespace Emulator
         {
             if (!PythonEngine.IsInitialized)
             {
+                string pythonDllPath = FindPythonDllPath();
+                Runtime.PythonDLL = pythonDllPath;
                 PythonEngine.Initialize();
                 _isInitializedHere = true;
             }
@@ -286,6 +291,159 @@ namespace Emulator
             {
                 PythonEngine.Shutdown();
             }
+        }
+
+        /// <summary>
+        /// Finds the path to the Python shared library.
+        /// </summary>
+        private static string FindPythonDllPath()
+        {
+            bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            bool isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+            bool isOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+            if (!isWindows && !isLinux && !isOSX)
+            {
+                throw new PlatformNotSupportedException("Unsupported operating system.");
+            }
+
+            // Find the Python executable in PATH
+            string[] possibleExeNames = isWindows
+                ? new string[] { "python", "python3" }
+                : new string[] { "python3", "python" };
+            string? pythonExe = null;
+            foreach (string possibleName in possibleExeNames)
+            {
+                if (isWindows)
+                {
+                    pythonExe = FindInPath(possibleName + ".exe");
+                }
+                else 
+                { 
+                    pythonExe = FindInPath(possibleName);
+                }
+
+                if (pythonExe != null)
+                    break;
+            }
+            if (pythonExe == null)
+                throw new InvalidOperationException("Python executable not found in PATH.");
+
+            // Verify Python version
+            string version = GetPythonVersion(pythonExe);
+            VerifyPythonVersion(version);
+
+            // Get dll
+            string pyCode = @"
+import sys
+import os
+from ctypes import util as ctypes_util
+if sys.platform.startswith('win'):
+    major = sys.version_info.major
+    minor = sys.version_info.minor
+    dllname = f'python{major}{minor}.dll'
+    print(os.path.join(os.path.dirname(sys.executable), dllname))
+else:
+    major = sys.version_info.major
+    minor = sys.version_info.minor
+    libname = f'python{major}.{minor}'
+    libpath = ctypes_util.find_library(libname)
+    if libpath is None:
+        libname += 'm'
+        libpath = ctypes_util.find_library(libname)
+    if libpath is None:
+        raise ValueError('Could not find libpython')
+    print(libpath)";
+            string dllPath = GetPythonOutput(pythonExe, pyCode);
+            if (!File.Exists(dllPath))
+                throw new FileNotFoundException($"Python shared library not found at '{dllPath}'.");
+
+            return dllPath;
+        }
+
+        /// <summary>
+        /// Helper to get output from a Python script.
+        /// </summary>
+        private static string GetPythonOutput(string pythonExe, string code)
+        {
+            var psi = new ProcessStartInfo(pythonExe, $"-c \"{code}\"")
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var process = Process.Start(psi) ?? throw new Exception("Failed to start Python process.");
+            string output = process.StandardOutput.ReadToEnd().Trim();
+            string error = process.StandardError.ReadToEnd().Trim();
+            process.WaitForExit();
+            if (process.ExitCode != 0)
+            {
+                throw new InvalidOperationException($"Python script failed: {error}");
+            }
+            return output;
+        }
+
+        /// <summary>
+        /// Helper to find file in PATH
+        /// </summary>
+        private static string? FindInPath(string fileName)
+        {
+            string? pathEnv = Environment.GetEnvironmentVariable("PATH");
+            if (string.IsNullOrEmpty(pathEnv)) return null;
+
+            string[] paths = pathEnv.Split(Path.PathSeparator);
+            foreach (string path in paths)
+            {
+                string fullPath = Path.Combine(path, fileName);
+                if (File.Exists(fullPath))
+                {
+                    return fullPath;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Helper to get Python version
+        /// </summary>
+        /// <remarks>Starts python with -V argument.</remarks>
+        private static string GetPythonVersion(string pythonExe)
+        {
+            var psi = new ProcessStartInfo(pythonExe, "-V")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(psi) ?? throw new Exception("Failed to start Python process.");
+            process.WaitForExit();
+            string output = process.StandardOutput.ReadToEnd().Trim();
+            
+            return output.Split(' ')[1];
+        }
+
+        /// <summary>
+        /// Verifies that the provided Python version string represents a supported version.
+        /// </summary>
+        private static void VerifyPythonVersion(string version)
+        {
+            string[] expectedParts = Paths.MIN_PYTHON_VERSION.Split('.');
+
+            string[] parts = version.Split('.');
+            if (parts.Length <= 2)
+                throw new ArgumentException($"Cannot parse Python version: \"{version}\". Expected format \"major.minor...\".", nameof(version));
+
+            int major = int.Parse(parts[0]);
+            int minor = int.Parse(parts[1]);
+
+            if (major != int.Parse(expectedParts[0]))
+                throw new InvalidOperationException(
+                    $"Unsupported Python major version: {major}. Only Python 3.x is supported.");
+
+            if (minor < int.Parse(expectedParts[1]))
+                throw new InvalidOperationException(
+                    $"Unsupported Python version: {version}. Requires Python 3.12 or newer.");
         }
     }
 

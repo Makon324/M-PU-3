@@ -3,13 +3,28 @@
 [assembly: InternalsVisibleTo("Emulator.Tests")]
 
 
-internal sealed class MainClass
+namespace Emulator
 {
-    private static void Main(string[] args)
+    internal sealed class MainClass
     {
-        Console.WriteLine("Hello, World!");
+        private static void Main(string[] args)
+        {
+            if (args.Length == 0)
+                throw new ArgumentException("No program file specified.");
+
+            string programPath = args[0];
+
+            Program program = ProgramLoader.LoadProgram(programPath);
+
+            CPU cpu = new CPU(program);
+
+            cpu.Context.Ports.TryRegisterPort(32, new ConsoleOutputDevice());
+
+            cpu.Run();
+        }
     }
 }
+
 
 
 

@@ -1,0 +1,35 @@
+LDI R1, 0x48 ; H
+PST R1, 32
+LDI R1, 0x65 ; e
+PST R1, 32
+LDI R1, 0x6C ; 2x l
+PST R1, 32
+PST R1, 32
+LDI R1, 0x6F ; o
+PST R1, 32
+
+LDI R1, 0x20 ; SPACE
+PST R1, 32
+
+LDI R1, 0x57 ; W
+PST R1, 32
+LDI R1, 0x6F ; o
+PST R1, 32
+LDI R1, 0x72 ; r
+PST R1, 32
+LDI R1, 0x6C ; l
+PST R1, 32
+LDI R1, 0x64 ; d
+PST R1, 32
+
+LDI R1, 0x21 ; !
+PST R1, 32
+LDI R1, 0xA ; \n
+PST R1, 32
+
+HLT
+
+
+
+
+

@@ -133,7 +133,8 @@ namespace Emulator
         /// <summary>
         /// Helper to get the truncated result and carry flag from an integer result.
         /// </summary>
-        protected static (byte result, bool carry) GetResultAndCarry(int result)
+        /// <remarks>internal to make it visible to ALU instructions that do not inerit from ExecuteALU like ADI and SUBI.</remarks>>
+        internal static (byte result, bool carry) GetResultAndCarry(int result)
         {
             byte truncatedResult = (byte)(result & ALL_BTIS);
             bool carry = result > ALL_BTIS;
@@ -351,6 +352,50 @@ namespace Emulator
         {
             context.Registers[_destination] = _immediate;
             context.ZeroFlag = context.Registers[_destination] == 0;
+        }
+    }
+
+    // Add Immediate instruction
+    internal sealed class ExecuteADI : BaseExecute
+    {
+        private readonly Register _destination;
+        private readonly Register _source;
+        private readonly byte _immediate;
+        public ExecuteADI(List<Argument> arguments)
+        {
+            _destination = (Register)((RegisterArgument)arguments[0]).Value;
+            _source = (Register)((RegisterArgument)arguments[1]).Value;
+            _immediate = ((NumberArgument)arguments[2]).Value;
+        }
+        protected override void ExecuteInstruction(ref CPUContext context)
+        {
+            int result = context.Registers[_source] + _immediate;
+            (byte truncatedResult, bool carry) = ExecuteALU.GetResultAndCarry(result);
+            context.Registers[_destination] = truncatedResult;
+            context.ZeroFlag = truncatedResult == 0;
+            context.CarryFlag = carry;
+        }
+    }
+
+    // Subtract Immediate instruction
+    internal sealed class ExecuteSUBI : BaseExecute
+    {
+        private readonly Register _destination;
+        private readonly Register _source;
+        private readonly byte _immediate;
+        public ExecuteSUBI(List<Argument> arguments)
+        {
+            _destination = (Register)((RegisterArgument)arguments[0]).Value;
+            _source = (Register)((RegisterArgument)arguments[1]).Value;
+            _immediate = ((NumberArgument)arguments[2]).Value;
+        }
+        protected override void ExecuteInstruction(ref CPUContext context)
+        {
+            int result = context.Registers[_source] + (byte)~_immediate + 1;
+            (byte truncatedResult, bool carry) = ExecuteALU.GetResultAndCarry(result);
+            context.Registers[_destination] = truncatedResult;
+            context.ZeroFlag = truncatedResult == 0;
+            context.CarryFlag = carry;
         }
     }
 

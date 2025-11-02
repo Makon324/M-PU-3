@@ -11,6 +11,11 @@
             _stackPointer = value;
         }
 
+        /// <summary>
+        /// Increments the stack pointer by the specified frame size.
+        /// </summary>
+        /// <param name="frameSize"></param>
+        /// <exception cref="InvalidOperationException">Thrown if incrementing would cause the stack pointer to overflow beyond the maximum byte value.</exception>
         public void Increment(byte frameSize = 1)
         {
             if (_stackPointer + frameSize > byte.MaxValue)
@@ -19,6 +24,11 @@
             _stackPointer += frameSize;
         }
 
+        /// <summary>
+        /// Decrements the stack pointer by the specified frame size.
+        /// </summary>
+        /// <param name="frameSize"></param>
+        /// <exception cref="InvalidOperationException">Thrown if incrementing would cause the stack pointer to overflow beyond the maximum byte value.</exception>
         public void Decrement(byte frameSize)
         {
             if (_stackPointer < frameSize)

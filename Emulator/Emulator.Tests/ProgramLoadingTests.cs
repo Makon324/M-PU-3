@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using Emulator;
-using Xunit;
-
-namespace Emulator.Tests
+﻿namespace Emulator.Tests
 {
     public class ProgramLoadingTests
     {

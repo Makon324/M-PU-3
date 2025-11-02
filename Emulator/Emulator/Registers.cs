@@ -1,7 +1,7 @@
 ﻿namespace Emulator
 {
     /// <summary>
-    /// Represents adresses of CPU registers.
+    /// Represents addresses of CPU registers.
     /// </summary>
     public enum Register
     {

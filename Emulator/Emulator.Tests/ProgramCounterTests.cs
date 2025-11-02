@@ -82,7 +82,7 @@
             var pc = new ProgramCounter(Architecture.MAX_PROGRAM_SIZE - 1);
 
             var exception = Assert.Throws<InvalidOperationException>(() => pc.PushCAL(0x200));
-            Assert.Contains("Can't push invalid adress onto stack", exception.Message);
+            Assert.Contains("Can't push invalid address onto stack", exception.Message);
         }
 
         [Fact]

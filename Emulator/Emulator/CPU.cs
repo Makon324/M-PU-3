@@ -38,7 +38,7 @@
         /// <summary>
         /// Starts the instruction pipeline by filling it with NOP instructions.
         /// </summary>
-        /// <remarks>This is state normally encountered at the start of a program.</remarks>>
+        /// <remarks>This is the state normally encountered at the start of a program.</remarks>
         private void StartPipeline()
         {
             for (int i = 0; i < Architecture.INSTRUCTION_PIPELINE_SIZE; i++)

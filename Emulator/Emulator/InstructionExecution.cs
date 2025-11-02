@@ -74,7 +74,7 @@ namespace Emulator
 
     #region Instruction Implementations
 
-    // No Opetation instruction
+    // No Operation instruction
     internal sealed class ExecuteNOP : BaseExecute
     {
         protected override void ExecuteInstruction(ref CPUContext context)
@@ -131,18 +131,18 @@ namespace Emulator
         /// <summary>
         /// Helper to get the truncated result and carry flag from an integer result.
         /// </summary>
-        /// <remarks>internal to make it visible to ALU instructions that do not inerit from ExecuteALU like ADI and SUBI.</remarks>>
+        /// <remarks>internal to make it visible to ALU instructions that do not inherit from ExecuteALU like ADI and SUBI.</remarks>
         internal static (byte result, bool carry) GetResultAndCarry(int result)
         {
-            byte truncatedResult = (byte)(result & ALL_BTIS);
-            bool carry = result > ALL_BTIS;
+            byte truncatedResult = (byte)(result & ALL_BITS);
+            bool carry = result > ALL_BITS;
             return (truncatedResult, carry);
         }
 
         // Helpers for calculations
         protected const byte SIGN_BIT = 0x80;
         protected const byte CARRY_BIT = 0x01;
-        protected const byte ALL_BTIS = 0xFF;
+        protected const byte ALL_BITS = 0xFF;
     }
 
     // Add instruction
@@ -277,7 +277,7 @@ namespace Emulator
         protected override (byte result, bool carry) Compute(byte a, byte b, byte carryIn)
         {
             byte signBit = (byte)(a & SIGN_BIT);
-            byte result = signBit == 0 ? (byte)0 : (byte)ALL_BTIS;
+            byte result = signBit == 0 ? (byte)0 : (byte)ALL_BITS;
             return (result, false);
         }
     }

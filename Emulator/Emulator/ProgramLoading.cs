@@ -12,12 +12,10 @@ namespace Emulator
     {
         /// <summary>
         /// Takes a path to an assembly program file, reads its content, transforms it using parts of Python Assembler, resolves labels, 
-        /// and generates a list of instructions in the form of <see cref="InstructionStatement">.
+        /// and generates a List of instructions in the form of <see cref="Program">.
         /// </summary>
         /// <param name="path">The file path to the assembly program.</param>
-        /// <returns>
-        /// Program in the form of a List of <see cref="Instruction"> in the form of a <see cref="Program"/>.
-        /// </returns>
+        /// <returns>A <see cref="Program"/> containing the compiled List of <see cref="Instruction"/></returns>
         /// <exception cref="ArgumentException">Thrown when the path is null or empty.</exception>
         /// <exception cref="FileNotFoundException">Thrown when the specified file does not exist.</exception>
         /// <exception cref="ProgramLoadException">Thrown when file reading, parsing, validation, or compilation fails.
@@ -104,9 +102,9 @@ namespace Emulator
     }
 
     /// <summary>
-    /// Abstract base class representing a statement in an assembly program.
-    /// Used only during program loading and transformation.
+    /// Abstract base class representing a statement in an assembly program.    
     /// </summary>
+    /// <remarks>Used only during program loading and transformation.</remarks>
     internal abstract class ProgramStatement(int line, int column)
     {
         public abstract StatementType Type { get; }
@@ -209,9 +207,9 @@ namespace Emulator
         /// Converts a dynamic Python list of dictionaries into a strongly-typed list of <see cref="ProgramStatement"/>.
         /// </summary>
         /// <remarks>This method processes each dictionary in the input list based on its "type" property.
-        /// If the type is "label", it creates a <see cref="LabelStatement"/>. If the type is "instruction", it creates
-        /// an <see cref="InstructionStatement"/> and converts its arguments into <see cref="Token"/> objects.</remarks>
-        /// <remarks>This method runs after code is already validated by python validator, so it omits some checks.</remarks>
+        /// If the type is "label", creates a <see cref="LabelStatement"/>. 
+        /// If "instruction", creates an <see cref="InstructionStatement"/> with converted <see cref="Token"/> arguments.</remarks>
+        /// <remarks>This method runs after code is already validated by Python validator, so it omits some checks.</remarks>
         /// <param name="pythonList">A dynamic list of dictionaries, where each dictionary represents a program statement with properties such as
         /// type, label, mnemonic, and arguments.</param>
         /// <returns>A list of <see cref="ProgramStatement"/> objects representing the converted program statements.</returns>
@@ -443,7 +441,7 @@ else:
 
             if (minor < int.Parse(expectedParts[1]))
                 throw new InvalidOperationException(
-                    $"Unsupported Python version: {version}. Requires Python 3.12 or newer.");
+                    $"Unsupported Python version: {version}. Requires Python {Paths.MIN_PYTHON_VERSION} or newer.");
         }
     }
 
@@ -457,8 +455,8 @@ else:
         /// <param name="filePath">The source file path (used for error reporting).</param>
         /// <returns>
         /// A tuple containing:
-        /// - labels: Dictionary mapping label names to their resolved memory addresses
-        /// - program: List of instruction statements with resolved label references
+        /// - <c>labels</c>: A dictionary mapping label names to resolved memory addresses.
+        /// - <c>program</c>: A list of <see cref="InstructionStatement"/>s with resolved label references.
         /// </returns>
         /// <exception cref="ProgramLoadException">
         /// Thrown when duplicate labels are found or when undefined labels are referenced.</exception>
@@ -491,7 +489,7 @@ else:
 
             if (instructionStatements.Count > Architecture.MAX_PROGRAM_SIZE)
             {
-                throw new ProgramLoadException(filePath, $"Program exceeds {Architecture.MAX_PROGRAM_SIZE} instructions, found: {instructionStatements.Count} instructions.");
+                throw new ProgramLoadException(filePath, $"Program exceeds maximum size of {Architecture.MAX_PROGRAM_SIZE} instructions ({instructionStatements.Count} found).");
             }
 
             return (labels, instructionStatements);
@@ -499,9 +497,9 @@ else:
 
 
         /// <summary>
-        /// Compiles a list of InstructionStatements and Labels into List of <see cref="Instruction">
+        /// Compiles a list of <see cref="InstructionStatement"/> and labels into a List of <see cref="Instruction"/>.
         /// </summary>
-        /// <remarks>This method runs after code is already validated by python validator, so it omits some checks.</remarks>
+        /// <remarks>This method runs after code is already validated by Python validator, so it omits some checks.</remarks>
         public static IReadOnlyList<Instruction> CompileProgram(
             IReadOnlyDictionary<string, ushort> labels, 
             IReadOnlyList<InstructionStatement> instructionStatements)
@@ -554,7 +552,7 @@ else:
         }
 
         /// <summary>
-        /// Parses a string representing an integer in binary, hexadecimal, or decimal format.
+        /// Parses a string representing a small integer (0–65535) in binary, hexadecimal, or decimal format.
         /// </summary>
         private static int NumParse(string input)
         {

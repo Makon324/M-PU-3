@@ -35,7 +35,7 @@
             if (address >= Architecture.MAX_PROGRAM_SIZE)
                 throw new ArgumentOutOfRangeException(nameof(address), "Address is out of bounds.");
             if (_programCounter + 1 >= Architecture.MAX_PROGRAM_SIZE)
-                throw new InvalidOperationException("Can't push invalid adress onto stack.");
+                throw new InvalidOperationException("Can't push invalid address onto stack.");
 
             _callStack.Push((ushort)(_programCounter + 1));
             _programCounter = address;

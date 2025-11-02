@@ -27,23 +27,9 @@
         /// It is also possible to step through the program one instruction at a time using the Step() method.</remarks>
         public void Run()
         {
-            StartPipeline();
-
             while (!_context.Halted)
             {
                 Step();
-            }
-        }
-
-        /// <summary>
-        /// Starts the instruction pipeline by filling it with NOP instructions.
-        /// </summary>
-        /// <remarks>This is the state normally encountered at the start of a program.</remarks>
-        private void StartPipeline()
-        {
-            for (int i = 0; i < Architecture.INSTRUCTION_PIPELINE_SIZE; i++)
-            {
-                ExecutePipelineInstruction(new Instruction("NOP"), advancePC: false);
             }
         }
 

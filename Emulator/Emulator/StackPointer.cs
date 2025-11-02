@@ -1,15 +1,10 @@
 ﻿namespace Emulator
 {
-    internal sealed class StackPointer
+    internal sealed class StackPointer(byte value = 0)
     {
-        private byte _stackPointer;
+        private byte _stackPointer = value;
 
         public byte Value { get => _stackPointer; }
-
-        public StackPointer(byte value = 0)
-        {
-            _stackPointer = value;
-        }
 
         /// <summary>
         /// Increments the stack pointer by the specified frame size.

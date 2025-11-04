@@ -33,7 +33,7 @@ namespace Emulator
                 string assemblyCode = File.ReadAllText(path);
                 List<ProgramStatement> statements;
 
-                // Use PythonRuntimeManager here to manage initialization/shutdown
+                // Use PythonRuntimeManager to manage initialization/shutdown
                 using (var runtimeManager = new PythonRuntimeManager())
                 {
                     var transformer = new ProgramPythonTransformer();

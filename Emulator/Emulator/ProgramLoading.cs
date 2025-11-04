@@ -33,9 +33,11 @@ namespace Emulator
                 string assemblyCode = File.ReadAllText(path);
                 List<ProgramStatement> statements;
 
-                using (var pythonTransformer = new ProgramPythonTransformer())
+                // Use PythonRuntimeManager here to manage initialization/shutdown
+                using (var runtimeManager = new PythonRuntimeManager())
                 {
-                    statements = pythonTransformer.TransformProgram(assemblyCode, path);
+                    var transformer = new ProgramPythonTransformer();
+                    statements = transformer.TransformProgram(assemblyCode, path);
                 }
 
                 var (labels, instructionStatements) = ProgramCompiler.ResolveLabels(statements, path);
@@ -152,10 +154,8 @@ namespace Emulator
     /// Transforms assembly code into structured program statements using Python-based tokenizer, parser, and validator.
     /// Manages Python runtime initialization and cleanup.
     /// </summary>
-    internal sealed class ProgramPythonTransformer : IDisposable
-    {        
-        private bool _isInitializedHere = false;
-
+    internal sealed class ProgramPythonTransformer
+    {
         /// <summary>
         /// Transforms the provided assembly code into a list of strongly-typed program statements using parts of Python Assembler.
         /// </summary>
@@ -174,8 +174,9 @@ namespace Emulator
                 string parserModule = "parser";
                 string validatorModule = "validator";
 
-                InitializePython();
-                AddToPythonPath(assemblerPath);
+                // Ensure runtime is ready
+                PythonRuntimeManager.EnsureInitialized();
+                PythonRuntimeManager.AddToPythonPath(assemblerPath);
 
                 using (Py.GIL())
                 {
@@ -259,7 +260,40 @@ namespace Emulator
             return result;
         }
 
-        private static void AddToPythonPath(string path)
+    }
+
+    /// <summary>
+    /// Manages the initialization, configuration, and shutdown of the Python runtime environment.    
+    /// </summary>
+    /// <remarks>This class ensures the Python engine is properly set up for use in the application,
+    /// handling platform-specific details and version verification.</remarks>
+    internal sealed class PythonRuntimeManager : IDisposable
+    {
+        private static bool _isInitializedHere = false;
+        private static readonly object _lock = new object();
+
+        /// <summary>
+        /// Ensures that the Python runtime is initialized.
+        /// </summary>
+        public static void EnsureInitialized()
+        {
+            lock (_lock)
+            {
+                if (!PythonEngine.IsInitialized)
+                {
+                    string pythonDllPath = FindPythonDllPath();
+                    Runtime.PythonDLL = pythonDllPath;
+                    PythonEngine.Initialize();
+                    _isInitializedHere = true;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Adds the specified path to the Python system's path list if it is not already present.        
+        /// </summary>
+        /// <remarks>This allows importing Python modules from the given directory.</remarks>
+        public static void AddToPythonPath(string path)
         {
             using (Py.GIL())
             {
@@ -269,17 +303,6 @@ namespace Emulator
                 {
                     sys.path.insert(0, path);
                 }
-            }
-        }
-
-        private void InitializePython()
-        {
-            if (!PythonEngine.IsInitialized)
-            {
-                string pythonDllPath = FindPythonDllPath();
-                Runtime.PythonDLL = pythonDllPath;
-                PythonEngine.Initialize();
-                _isInitializedHere = true;
             }
         }
 

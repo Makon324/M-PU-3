@@ -12,10 +12,20 @@
         public abstract ArgumentType Type { get; }
     }
 
-    internal sealed class RegisterArgument(byte value) : Argument
+    internal sealed class RegisterArgument : Argument
     {
         public override ArgumentType Type => ArgumentType.REGISTER;
-        public byte Value { get; } = value;
+        public byte Value { get; }
+
+        public RegisterArgument(byte value)
+        {
+            Value = value;
+        }
+
+        public RegisterArgument(Register register)
+        {
+            Value = (byte)register;
+        }
     }
 
     internal sealed class NumberArgument(byte value) : Argument

@@ -1,4 +1,6 @@
-﻿namespace Emulator
+﻿using System.Drawing;
+
+namespace Emulator
 {
     internal static class Architecture
     {
@@ -12,6 +14,9 @@
         public const int BRANCH_IF_NOT_ZERO_CODE = 0x01;  // ZeroFlag == 0
         public const int BRANCH_IF_CARRY_CODE = 0x02;     // CarryFlag == 1
         public const int BRANCH_IF_NOT_CARRY_CODE = 0x03; // CarryFlag == 0
+
+        public static readonly Size DISPLAY_SIZE = new Size(128, 128);
+        public const int DISPLAY_HZ_FREQUENCY = 500;
     }
 
     /// <summary>

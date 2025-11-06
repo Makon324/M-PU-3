@@ -80,20 +80,21 @@
 
 
     /// <summary>
-    /// Basic Device mainly for showcase and testing purposes.
+    /// Basic Device basically just a container for a byte value.
     /// </summary>
+    /// <remarks>Mainly for showcase and testing purposes.</remarks>
     internal sealed class BasicDevice : IOPort
     {
-        private byte _value;
+        public byte Value { get; set; }
 
         public void PortStore(byte value)
         {
-            _value = value;
+            Value = value;
         }
 
         public byte PortLoad()
         {
-            return _value;
+            return Value;
         }
     }
 

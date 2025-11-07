@@ -50,7 +50,7 @@ class Assembler:
             return binary
 
         except InvalidSyntaxError as e:
-            logger.error("Assembly failed: %s", e.message)
+            logger.error("Assembly failed: %s", str(e))
             raise
         except Exception as e:
             logger.error("Unexpected error during assembly: %s", str(e))

@@ -16,9 +16,9 @@ namespace Emulator
 
             Program program = ProgramLoader.LoadProgram(programPath);
 
-            CPU cpu = new CPU(program);
+            ICPUDirector director = new CPUBuildingDirector();
 
-            cpu.Context.Ports.TryRegisterPort(32, new ConsoleOutputDevice());
+            CPU cpu = director.Construct(program);
 
             cpu.Run();
         }

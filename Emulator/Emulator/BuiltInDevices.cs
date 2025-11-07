@@ -116,6 +116,7 @@ namespace Emulator
         {
             // RNG does not support storing values.
         }
+
         public byte PortLoad()
         {
             return (byte)_random.Next(0, 256);

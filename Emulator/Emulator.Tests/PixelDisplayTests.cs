@@ -9,7 +9,7 @@
 
         private PixelDisplay CreateDisplay(ref CPUContext context, byte basePort = 0)
         {
-            return new PixelDisplay(context, basePort);
+            return new PixelDisplay(context, basePort, new SDLRenderer());
         }
 
         [Fact]

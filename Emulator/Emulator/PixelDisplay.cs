@@ -32,7 +32,7 @@ namespace Emulator
 
         private long _lastRefreshTimestamp = 0;
 
-        private SDLRenderer? _renderer = null;
+        private SDLRenderer _renderer;
 
         /// <summary>
         /// Retrieves the pixel at specified coordinates. Used for testing.
@@ -56,9 +56,9 @@ namespace Emulator
 
         private void RefreshWindow()
         {
-            if (_renderer == null)
+            if (!_renderer.IsOpen)
             {
-                _renderer = new SDLRenderer();
+                _renderer.Start();
             }
 
             long now = Stopwatch.GetTimestamp();
@@ -74,11 +74,16 @@ namespace Emulator
             }
         }
 
-        public PixelDisplay(CPUContext context, byte basePort)
+        public PixelDisplay(CPUContext context, byte basePort, SDLRenderer renderer)
         {
             if (basePort >= Architecture.IO_PORT_COUNT - 4)
                 throw new ArgumentOutOfRangeException(nameof(basePort),
                     $"Base port must be <= {Architecture.IO_PORT_COUNT - 4} to allow four consecutive ports.");
+
+            if (renderer == null)
+                throw new ArgumentNullException(nameof(renderer));
+
+            _renderer = renderer;
 
             bool registered = true;
 
@@ -172,7 +177,7 @@ namespace Emulator
         private IntPtr _rendererPtr;
         private IntPtr _texture;
 
-        private bool _isOpen = true;
+        private bool _isOpen = false;
 
         private int _currentWidth;
         private int _currentHeight;
@@ -182,8 +187,10 @@ namespace Emulator
 
         public bool IsOpen => _isOpen;
 
-        public SDLRenderer()
+        public void Start()
         {
+            _isOpen = true;
+
             if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
             {
                 throw new InvalidOperationException($"SDL_Init failed: {SDL.SDL_GetError()}");

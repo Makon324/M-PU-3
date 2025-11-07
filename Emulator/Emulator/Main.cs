@@ -18,9 +18,16 @@ namespace Emulator
 
             ICPUDirector director = new CPUBuildingDirector();
 
-            CPU cpu = director.Construct(program);
+            SDLRenderer renderer = new SDLRenderer();
+
+            CPU cpu = director.Construct(program, renderer);
 
             cpu.Run();
+
+            while (renderer.IsOpen)
+            {
+                renderer.PollEvents();
+            }
         }
     }
 }

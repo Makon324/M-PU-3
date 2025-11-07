@@ -5,7 +5,7 @@
         [Fact]
         public void LoadProgram_ThrowsArgumentException_ForInvalidPath()
         {
-            Assert.Throws<ArgumentException>(() => ProgramLoader.LoadProgram(null));
+            Assert.Throws<ArgumentException>(() => ProgramLoader.LoadProgram(null!));
             Assert.Throws<ArgumentException>(() => ProgramLoader.LoadProgram(string.Empty));
             Assert.Throws<ArgumentException>(() => ProgramLoader.LoadProgram("   "));
         }

@@ -34,6 +34,14 @@ namespace Emulator
 
         private SDLRenderer? _renderer = null;
 
+        /// <summary>
+        /// Retrieves the pixel at specified coordinates. Used for testing.
+        /// </summary>
+        internal Pixel GetPixel(int x, int y)
+        {
+            return _grid[y, x];
+        }
+
         private void SetPixel()
         {
             _grid[_Y, _X] = new Pixel

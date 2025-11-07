@@ -1,9 +1,4 @@
-﻿using System;
-using System.Reflection;
-using Emulator;
-using Xunit;
-
-namespace Emulator.Tests
+﻿namespace Emulator.Tests
 {
     public class PixelDisplayTests
     {

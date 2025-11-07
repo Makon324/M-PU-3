@@ -234,8 +234,7 @@ namespace Emulator
 
         public void PollEvents()
         {
-            SDL.SDL_Event sdlEvent;
-            while (SDL.SDL_PollEvent(out sdlEvent) != 0)
+            while (SDL.SDL_PollEvent(out SDL.SDL_Event sdlEvent) != 0)
             {
                 switch (sdlEvent.type)
                 {
@@ -328,9 +327,7 @@ namespace Emulator
             }
 
             // Lock the texture to get a pointer for writing
-            IntPtr lockedPixels;
-            int pitch;
-            if (SDL.SDL_LockTexture(_texture, IntPtr.Zero, out lockedPixels, out pitch) != 0)
+            if (SDL.SDL_LockTexture(_texture, IntPtr.Zero, out IntPtr lockedPixels, out int pitch) != 0)
             {
                 throw new InvalidOperationException($"SDL_LockTexture failed: {SDL.SDL_GetError()}");
             }

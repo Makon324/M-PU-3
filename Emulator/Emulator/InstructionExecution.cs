@@ -131,7 +131,7 @@ namespace Emulator
         /// <summary>
         /// Helper to get the truncated result and carry flag from an integer result.
         /// </summary>
-        /// <remarks>internal to make it visible to ALU instructions that do not inherit from ExecuteALU like ADI and SUBI.</remarks>
+        /// <remarks>Internal to make it visible to ALU instructions that do not inherit from ExecuteALU like ADI and SUBI.</remarks>
         internal static (byte result, bool carry) GetResultAndCarry(int result)
         {
             byte truncatedResult = (byte)(result & ALL_BITS);

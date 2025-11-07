@@ -178,7 +178,7 @@ namespace Emulator
         private int _currentHeight;
         private double _aspectRatio;
 
-        private byte[] _pixelsBuffer = new byte[Architecture.DISPLAY_SIZE.Width * Architecture.DISPLAY_SIZE.Height * 3];
+        private readonly byte[] _pixelsBuffer = new byte[Architecture.DISPLAY_SIZE.Width * Architecture.DISPLAY_SIZE.Height * 3];
 
         public bool IsOpen => _isOpen;
 

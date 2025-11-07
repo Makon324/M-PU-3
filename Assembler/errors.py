@@ -32,6 +32,11 @@ class InvalidSyntaxError(Exception):
             super().__init__(message)
 
     def __str__(self):
+        if self.line is not None:
+            location = f"line {self.line}"
+            if self.column is not None:
+                location += f", column {self.column}"
+            return f"{location}: {self.message}"
         return self.message
 
 

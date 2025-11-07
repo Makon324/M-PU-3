@@ -1,5 +1,6 @@
-﻿using System.Diagnostics;
-using SDL2;
+﻿using SDL2;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace Emulator
 {
@@ -24,18 +25,18 @@ namespace Emulator
     {
         private readonly BasicDevice[] _RGBports = new BasicDevice[3];
 
-        private readonly Pixel[,] _grid = new Pixel[Architecture.DISPLAY_SIZE.Width, Architecture.DISPLAY_SIZE.Height];
+        private readonly Pixel[,] _grid = new Pixel[Architecture.DISPLAY_SIZE.Height, Architecture.DISPLAY_SIZE.Width];
 
         private byte _X;
         private byte _Y;
 
         private long _lastRefreshTimestamp = 0;
 
-        private bool _isWindowOpen = false;
+        private SDLRenderer? _renderer = null;
 
         private void SetPixel()
         {
-            _grid[_X, _Y] = new Pixel
+            _grid[_Y, _X] = new Pixel
             {
                 Red = _RGBports[0].PortLoad(),
                 Green = _RGBports[1].PortLoad(),
@@ -47,11 +48,9 @@ namespace Emulator
 
         private void RefreshWindow()
         {
-            if (!_isWindowOpen)
+            if (_renderer == null)
             {
-                _isWindowOpen = true;
-
-                // start window
+                _renderer = new SDLRenderer();
             }
 
             long now = Stopwatch.GetTimestamp();
@@ -59,7 +58,7 @@ namespace Emulator
             {
                 _lastRefreshTimestamp = now;
 
-                // render grid to window
+                _renderer.Render(_grid);
             }
             else
             {
@@ -156,5 +155,216 @@ namespace Emulator
         }
     }
 
-    
+    /// <summary>
+    /// Renders a pixel grid to an SDL2 window.
+    /// </summary>
+    internal sealed class SDLRenderer : IDisposable
+    {
+        private IntPtr _window;
+        private IntPtr _rendererPtr;
+        private IntPtr _texture;
+
+        private bool _isOpen = true;
+
+        private int _currentWidth;
+        private int _currentHeight;
+        private double _aspectRatio;
+
+        private byte[] _pixelsBuffer = new byte[Architecture.DISPLAY_SIZE.Width * Architecture.DISPLAY_SIZE.Height * 3];
+
+        public bool IsOpen => _isOpen;
+
+        public SDLRenderer()
+        {
+            if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
+            {
+                throw new InvalidOperationException($"SDL_Init failed: {SDL.SDL_GetError()}");
+            }
+
+            // Create window
+            _window = SDL.SDL_CreateWindow(
+                "Pixel Display",
+                SDL.SDL_WINDOWPOS_CENTERED,
+                SDL.SDL_WINDOWPOS_CENTERED,
+                Architecture.DISPLAY_SIZE.Width,
+                Architecture.DISPLAY_SIZE.Height,
+                SDL.SDL_WindowFlags.SDL_WINDOW_RESIZABLE
+            );
+
+            if (_window == IntPtr.Zero)
+            {
+                throw new InvalidOperationException($"SDL_CreateWindow failed: {SDL.SDL_GetError()}");
+            }
+
+            _rendererPtr = SDL.SDL_CreateRenderer(_window, -1, SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED);
+
+            if (_rendererPtr == IntPtr.Zero)
+            {
+                throw new InvalidOperationException($"SDL_CreateRenderer failed: {SDL.SDL_GetError()}");
+            }
+
+            SDL.SDL_SetHint(SDL.SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+
+            _texture = SDL.SDL_CreateTexture(
+                _rendererPtr,
+                SDL.SDL_PIXELFORMAT_RGB24,
+                (int)SDL.SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING,
+                Architecture.DISPLAY_SIZE.Width,
+                Architecture.DISPLAY_SIZE.Height
+            );
+
+            if (_texture == IntPtr.Zero)
+            {
+                throw new InvalidOperationException($"SDL_CreateTexture failed: {SDL.SDL_GetError()}");
+            }
+
+            // Initialize aspect ratio and current size
+            _currentWidth = Architecture.DISPLAY_SIZE.Width;
+            _currentHeight = Architecture.DISPLAY_SIZE.Height;
+            _aspectRatio = _currentWidth / (double)_currentHeight;
+        }
+
+        public void PollEvents()
+        {
+            SDL.SDL_Event sdlEvent;
+            while (SDL.SDL_PollEvent(out sdlEvent) != 0)
+            {
+                switch (sdlEvent.type)
+                {
+                    case SDL.SDL_EventType.SDL_QUIT:
+                        _isOpen = false;
+                        break;
+                    case SDL.SDL_EventType.SDL_WINDOWEVENT:
+                        if (sdlEvent.window.windowEvent == SDL.SDL_WindowEventID.SDL_WINDOWEVENT_RESIZED)
+                        {
+                            HandleResize(sdlEvent);
+                        }
+                        break;
+                }
+            }
+        }
+
+        private void HandleResize(SDL.SDL_Event sdlEvent)
+        {
+            int newWidth = sdlEvent.window.data1;
+            int newHeight = sdlEvent.window.data2;
+
+            if (newWidth == _currentWidth && newHeight == _currentHeight) return;
+
+            // Detect which dimension was primarily resized and adjust the other to maintain aspect ratio
+            int adjustedWidth = newWidth;
+            int adjustedHeight = newHeight;
+
+            if (newWidth != _currentWidth && newHeight == _currentHeight)
+            {
+                // Width was resized (side drag), adjust height
+                adjustedHeight = (int)(newWidth / _aspectRatio);
+            }
+            else if (newHeight != _currentHeight && newWidth == _currentWidth)
+            {
+                // Height was resized (top/bottom drag), adjust width
+                adjustedWidth = (int)(newHeight * _aspectRatio);                
+            }
+            else
+            {
+                // Corner drag or both changed: adjust based on the larger proportional change
+                double deltaWidth = Math.Abs(newWidth - _currentWidth) / (double)_currentWidth;
+                double deltaHeight = Math.Abs(newHeight - _currentHeight) / (double)_currentHeight;
+
+                if (deltaWidth > deltaHeight)
+                {
+                    // Width changed more, adjust height
+                    adjustedHeight = (int)(newWidth / _aspectRatio);
+                }
+                else
+                {
+                    // Height changed more (or equal), adjust width
+                    adjustedWidth = (int)(newHeight * _aspectRatio);
+                }
+            }
+
+            // Clamp to minimum size if needed
+            if (adjustedWidth < Architecture.DISPLAY_SIZE.Width || adjustedHeight < Architecture.DISPLAY_SIZE.Height)
+            {
+                adjustedWidth = Architecture.DISPLAY_SIZE.Width;
+                adjustedHeight = Architecture.DISPLAY_SIZE.Height;
+            }
+
+            // Apply the adjusted size
+            SDL.SDL_SetWindowSize(_window, adjustedWidth, adjustedHeight);
+
+            // Update current size
+            _currentWidth = adjustedWidth;
+            _currentHeight = adjustedHeight;
+        }
+
+        public void Render(Pixel[,] grid)
+        {
+            if (!_isOpen) return;
+
+            PollEvents();
+
+            // MAIN RENDERING LOGIC
+
+            // Fill the pixel buffer from the grid
+            for (int y = 0; y < Architecture.DISPLAY_SIZE.Height; y++)
+            {
+                for (int x = 0; x < Architecture.DISPLAY_SIZE.Width; x++)
+                {
+                    Pixel p = grid[y, x];
+                    int index = (y * Architecture.DISPLAY_SIZE.Width + x) * 3;
+                    _pixelsBuffer[index] = p.Red;
+                    _pixelsBuffer[index + 1] = p.Green;
+                    _pixelsBuffer[index + 2] = p.Blue;
+                }
+            }
+
+            // Lock the texture to get a pointer for writing
+            IntPtr lockedPixels;
+            int pitch;
+            if (SDL.SDL_LockTexture(_texture, IntPtr.Zero, out lockedPixels, out pitch) != 0)
+            {
+                throw new InvalidOperationException($"SDL_LockTexture failed: {SDL.SDL_GetError()}");
+            }
+
+            // Copy the managed array to the texture
+            unsafe
+            {
+                byte* dst = (byte*)lockedPixels;
+                for (int y = 0; y < Architecture.DISPLAY_SIZE.Height; y++)
+                {                    
+                    int srcOffset = y * Architecture.DISPLAY_SIZE.Width * 3; // Source row start
+
+                    byte* dstRow = dst + y * pitch; // Destination row start
+                    
+                    Marshal.Copy(_pixelsBuffer, srcOffset, (IntPtr)dstRow, Architecture.DISPLAY_SIZE.Width * 3);
+                }
+            }
+
+            SDL.SDL_UnlockTexture(_texture);
+            SDL.SDL_RenderClear(_rendererPtr);
+            SDL.SDL_RenderCopy(_rendererPtr, _texture, IntPtr.Zero, IntPtr.Zero);
+            SDL.SDL_RenderPresent(_rendererPtr);
+        }
+
+        public void Dispose()
+        {
+            if (_texture != IntPtr.Zero)
+            {
+                SDL.SDL_DestroyTexture(_texture);
+                _texture = IntPtr.Zero;
+            }
+            if (_rendererPtr != IntPtr.Zero)
+            {
+                SDL.SDL_DestroyRenderer(_rendererPtr);
+                _rendererPtr = IntPtr.Zero;
+            }
+            if (_window != IntPtr.Zero)
+            {
+                SDL.SDL_DestroyWindow(_window);
+                _window = IntPtr.Zero;
+            }
+            SDL.SDL_Quit();
+        }
+    }
 }

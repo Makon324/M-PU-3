@@ -66,7 +66,7 @@ namespace Emulator
             {
                 _lastRefreshTimestamp = now;
 
-                _renderer.Render(_grid);
+                _renderer.RenderNewGrid(_grid);
             }
             else
             {
@@ -178,6 +178,8 @@ namespace Emulator
         private IntPtr _texture;
 
         private bool _isOpen = false;
+
+        private Pixel[,]? _grid = null;
 
         private int _currentWidth;
         private int _currentHeight;
@@ -310,11 +312,21 @@ namespace Emulator
             // Update current size
             _currentWidth = adjustedWidth;
             _currentHeight = adjustedHeight;
+
+            // Render the grid again to fit new size
+            Render();
         }
 
-        public void Render(Pixel[,] grid)
+        public void RenderNewGrid(Pixel[,] grid)
         {
-            if (!_isOpen) return;
+            _grid = grid;
+
+            Render();
+        }
+
+        private void Render()
+        {
+            if (!_isOpen || _grid == null) return;
 
             PollEvents();
 
@@ -325,7 +337,7 @@ namespace Emulator
             {
                 for (int x = 0; x < Architecture.DISPLAY_SIZE.Width; x++)
                 {
-                    Pixel p = grid[y, x];
+                    Pixel p = _grid[y, x];
                     int index = (y * Architecture.DISPLAY_SIZE.Width + x) * 3;
                     _pixelsBuffer[index] = p.Red;
                     _pixelsBuffer[index + 1] = p.Green;

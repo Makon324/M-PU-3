@@ -74,7 +74,7 @@ namespace Emulator
             }
         }
 
-        public PixelDisplay(ref CPUContext context, byte basePort)
+        public PixelDisplay(CPUContext context, byte basePort)
         {
             if (basePort >= Architecture.IO_PORT_COUNT - 4)
                 throw new ArgumentOutOfRangeException(nameof(basePort),

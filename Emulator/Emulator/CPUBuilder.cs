@@ -21,14 +21,14 @@
         public CPUBuilder RegisterMultiplier(byte basePort)
         {
             CheckPortAvailability(basePort, 2);  // Needs 2 ports
-            var multiplier = new Multiplier(ref _cpu.Context, basePort);
+            var multiplier = new Multiplier(_cpu.Context, basePort);
             return this;  // For chaining
         }
 
         public CPUBuilder RegisterDivider(byte basePort)
         {
             CheckPortAvailability(basePort, 2);  // Needs 2 ports
-            var divider = new Divider(ref _cpu.Context, basePort);
+            var divider = new Divider(_cpu.Context, basePort);
             return this;
         }
 
@@ -61,14 +61,14 @@
         public CPUBuilder RegisterTimer(byte basePort)
         {
             CheckPortAvailability(basePort, 4);  // Needs 4 ports
-            var timer = new Timer(ref _cpu.Context, basePort);
+            var timer = new Timer(_cpu.Context, basePort);
             return this;
         }
 
         public CPUBuilder RegisterPixelDisplay(byte basePort)
         {
             CheckPortAvailability(basePort, 5);  // RGB + X/Y = 5 ports
-            var display = new PixelDisplay(ref _cpu.Context, basePort);
+            var display = new PixelDisplay(_cpu.Context, basePort);
             return this;
         }
 

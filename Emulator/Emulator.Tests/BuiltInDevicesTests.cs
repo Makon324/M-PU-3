@@ -10,7 +10,7 @@ namespace Emulator.Tests
         public void Multiplier_RegistersPortsCorrectly()
         {
             var context = new CPUContext();
-            var multiplier = new Multiplier(ref context, 0);
+            var multiplier = new Multiplier(context, 0);
             Assert.NotNull(context.Ports[0]);
             Assert.NotNull(context.Ports[1]);
         }
@@ -19,7 +19,7 @@ namespace Emulator.Tests
         public void Multiplier_ThrowsIfBasePortTooHigh()
         {
             var context = new CPUContext();
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Multiplier(ref context, (byte)(Architecture.IO_PORT_COUNT - 1)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new Multiplier(context, (byte)(Architecture.IO_PORT_COUNT - 1)));
         }
 
         [Fact]
@@ -27,7 +27,7 @@ namespace Emulator.Tests
         {
             var context = new CPUContext();
             context.Ports.TryRegisterPort(0, new BasicDevice());
-            Assert.Throws<InvalidOperationException>(() => new Multiplier(ref context, 0));
+            Assert.Throws<InvalidOperationException>(() => new Multiplier(context, 0));
         }
 
         [Theory]
@@ -39,7 +39,7 @@ namespace Emulator.Tests
         public void Multiplier_ComputesProductCorrectly(byte a, byte b, byte low, byte high)
         {
             var context = new CPUContext();
-            var multiplier = new Multiplier(ref context, 0);
+            var multiplier = new Multiplier(context, 0);
             context.Ports[0]!.PortStore(a);
             context.Ports[1]!.PortStore(b);
             Assert.Equal(low, context.Ports[0]!.PortLoad());
@@ -50,7 +50,7 @@ namespace Emulator.Tests
         public void Divider_RegistersPortsCorrectly()
         {
             var context = new CPUContext();
-            var divider = new Divider(ref context, 0);
+            var divider = new Divider(context, 0);
             Assert.NotNull(context.Ports[0]);
             Assert.NotNull(context.Ports[1]);
         }
@@ -59,7 +59,7 @@ namespace Emulator.Tests
         public void Divider_ThrowsIfBasePortTooHigh()
         {
             var context = new CPUContext();
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Divider(ref context, (byte)(Architecture.IO_PORT_COUNT - 1)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new Divider(context, (byte)(Architecture.IO_PORT_COUNT - 1)));
         }
 
         [Fact]
@@ -67,7 +67,7 @@ namespace Emulator.Tests
         {
             var context = new CPUContext();
             context.Ports.TryRegisterPort(0, new BasicDevice());
-            Assert.Throws<InvalidOperationException>(() => new Divider(ref context, 0));
+            Assert.Throws<InvalidOperationException>(() => new Divider(context, 0));
         }
 
         [Theory]
@@ -81,7 +81,7 @@ namespace Emulator.Tests
         public void Divider_ComputesDivisionCorrectly(byte divisor, byte dividend, byte quotient, byte remainder)
         {
             var context = new CPUContext();
-            var divider = new Divider(ref context, 0);
+            var divider = new Divider(context, 0);
             context.Ports[0]!.PortStore(divisor);
             context.Ports[1]!.PortStore(dividend);
             Assert.Equal(quotient, context.Ports[0]!.PortLoad());
@@ -103,7 +103,7 @@ namespace Emulator.Tests
         public void Timer_RegistersPortsCorrectly()
         {
             var context = new CPUContext();
-            var timer = new Timer(ref context, 0);
+            var timer = new Timer(context, 0);
             for (int i = 0; i < 4; i++)
             {
                 Assert.NotNull(context.Ports[i]);
@@ -114,7 +114,7 @@ namespace Emulator.Tests
         public void Timer_ThrowsIfBasePortTooHigh()
         {
             var context = new CPUContext();
-            Assert.Throws<ArgumentOutOfRangeException>(() => new Timer(ref context, (byte)(Architecture.IO_PORT_COUNT - 3)));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new Timer(context, (byte)(Architecture.IO_PORT_COUNT - 3)));
         }
 
         [Fact]
@@ -122,14 +122,14 @@ namespace Emulator.Tests
         {
             var context = new CPUContext();
             context.Ports.TryRegisterPort(0, new BasicDevice());
-            Assert.Throws<InvalidOperationException>(() => new Timer(ref context, 0));
+            Assert.Throws<InvalidOperationException>(() => new Timer(context, 0));
         }
 
         [Fact]
         public async Task Timer_IncreasesOverTime()
         {
             var context = new CPUContext();
-            var timer = new Timer(ref context, 0);
+            var timer = new Timer(context, 0);
             uint initial = ReadTimerValue(context);
             await Task.Delay(100);
             uint after = ReadTimerValue(context);

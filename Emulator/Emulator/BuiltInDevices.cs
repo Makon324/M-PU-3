@@ -16,7 +16,7 @@ namespace Emulator
         private byte _inputA;
         private byte _inputB;
 
-        public Multiplier(ref CPUContext context, byte basePort)
+        public Multiplier(CPUContext context, byte basePort)
         {
             if (basePort >= Architecture.IO_PORT_COUNT - 1)
                 throw new ArgumentOutOfRangeException(nameof(basePort),
@@ -68,7 +68,7 @@ namespace Emulator
         private byte _inputA; // Divisor
         private byte _inputB; // Dividend
 
-        public Divider(ref CPUContext context, byte basePort)
+        public Divider(CPUContext context, byte basePort)
         {
             if (basePort >= Architecture.IO_PORT_COUNT - 1)
                 throw new ArgumentOutOfRangeException(nameof(basePort),
@@ -136,7 +136,7 @@ namespace Emulator
         private readonly TimerPort[] _ports = new TimerPort[4];
         private readonly Stopwatch _stopwatch;
 
-        public Timer(ref CPUContext context, byte basePort)
+        public Timer(CPUContext context, byte basePort)
         {
             if (basePort >= Architecture.IO_PORT_COUNT - 3)
                 throw new ArgumentOutOfRangeException(nameof(basePort),

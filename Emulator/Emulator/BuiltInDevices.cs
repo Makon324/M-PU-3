@@ -51,20 +51,21 @@ namespace Emulator
                 return (byte)(_mul.Product >> (_portNumber * 8));
             }
         }
+    }
 
-        /// <summary>
-        /// Represents a divider component that performs division operations using two I/O ports.
-        /// </summary>
-        /// <remarks>The <see cref="Divider"/> class registers two ports, PortA and PortB. 
-        /// These ports are used to perform division operations on byte values. 
-        /// The result of the division is split across the two ports, with PortA providing the quotient
-        /// and PortB providing the remainder. Division by zero returns what real logic gates would have returned.</remarks>
-        internal class Divider
+    /// <summary>
+    /// Represents a divider component that performs division operations using two I/O ports.
+    /// </summary>
+    /// <remarks>The <see cref="Divider"/> class registers two ports, PortA and PortB. 
+    /// These ports are used to perform division operations on byte values. 
+    /// The result of the division is split across the two ports, with PortA providing the quotient
+    /// and PortB providing the remainder. Division by zero returns what real logic gates would have returned.</remarks>
+    internal class Divider
     {
-        private readonly PortA _portA;
-        private readonly PortB _portB;
-        private byte _inputA; // Divisor
-        private byte _inputB; // Dividend
+        private readonly PortA _portA;  // Divisor and Quotient port
+        private readonly PortB _portB;  // Dividend and Modulus port
+        private byte _divisor;
+        private byte _dividend;
 
         public Divider(CPUContext context, byte basePort)
         {
@@ -84,14 +85,15 @@ namespace Emulator
             }
         }
 
-        private byte Quotient => _inputA == 0 ? (byte)0xFF : (byte)(_inputB / _inputA);
-        private byte Mod => _inputA == 0 ? (byte)_inputB : (byte)(_inputB % _inputA);
+        private byte Quotient => _divisor == 0 ? (byte)0xFF : (byte)(_dividend / _divisor);
+        private byte Mod => _divisor == 0 ? (byte)_dividend : (byte)(_dividend % _divisor);
 
         private sealed class PortA(Divider div) : IOPort
         {
             private readonly Divider _div = div;
 
-            public void PortStore(byte value) => _div._inputA = value;
+            public void PortStore(byte value) => _div._divisor = value;
+
             public byte PortLoad() => _div.Quotient;
         }
 
@@ -99,7 +101,8 @@ namespace Emulator
         {
             private readonly Divider _div = div;
 
-            public void PortStore(byte value) => _div._inputB = value;
+            public void PortStore(byte value) => _div._dividend = value;
+
             public byte PortLoad() => _div.Mod;
         }
     }

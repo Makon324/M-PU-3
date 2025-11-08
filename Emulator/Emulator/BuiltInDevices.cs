@@ -86,6 +86,7 @@ namespace Emulator
         }
 
         private byte Quotient => _divisor == 0 ? (byte)0xFF : (byte)(_dividend / _divisor);
+
         private byte Mod => _divisor == 0 ? (byte)_dividend : (byte)(_dividend % _divisor);
 
         private sealed class PortA(Divider div) : IOPort

@@ -3,18 +3,17 @@
 namespace Emulator
 {
     /// <summary>
-    /// Represents a multiplier component that performs multiplication operations using two I/O ports.
+    /// Represents a multiplier component that performs multiplication operations using two consecutive I/O ports.
     /// </summary>
-    /// <remarks>The <see cref="Multiplier"/> class registers two ports, PortA and PortB. 
-    /// These ports are used to perform multiplication operations on byte values. 
-    /// The result of the multiplication is split across the two ports, with PortA providing the least significant byte
-    /// and PortB providing the highest significant byte of the result.</remarks>
-    internal class Multiplier
+    /// <remarks>The <see cref="Multiplier"/> class registers two consecutive ports starting at the base port.
+    /// These ports are used to perform multiplication operations on byte values.
+    /// Writing to the base port sets the first factor, and writing to base+1 sets the second factor.
+    /// The result of the multiplication is split across the two ports, with the base port providing the least significant byte
+    /// and base+1 providing the most significant byte of the result.</remarks>
+    internal sealed class Multiplier
     {
-        private readonly PortA _portA;
-        private readonly PortB _portB;
-        private byte _inputA;
-        private byte _inputB;
+        private readonly MultiplierPort[] _ports = new MultiplierPort[2];
+        private readonly byte[] _factors = new byte[2];
 
         public Multiplier(CPUContext context, byte basePort)
         {
@@ -22,46 +21,45 @@ namespace Emulator
                 throw new ArgumentOutOfRangeException(nameof(basePort),
                     $"Base port must be <= {Architecture.IO_PORT_COUNT - 2} to allow two consecutive ports.");
 
-            _portA = new PortA(this);
-            _portB = new PortB(this);
+            bool registered = true;
+            for (int i = 0; i < 2; i++)
+            {
+                _ports[i] = new MultiplierPort(this, i);
+                registered &= context.Ports.TryRegisterPort((byte)(basePort + i), _ports[i]);
+            }
 
-            if (!(
-                context.Ports.TryRegisterPort(basePort, _portA) &&
-                context.Ports.TryRegisterPort((byte)(basePort + 1), _portB)
-            ))
+            if (!registered)
             {
                 throw new InvalidOperationException($"Failed to register multiplier ports at {basePort} and {basePort + 1}.");
             }
-
         }
 
-        private ushort Product => (ushort)(_inputA * _inputB);
+        private ushort Product => (ushort)(_factors[0] * _factors[1]);
 
-        private sealed class PortA(Multiplier mul) : IOPort
+        private sealed class MultiplierPort(Multiplier mul, int portNumber) : IOPort
         {
             private readonly Multiplier _mul = mul;
+            private readonly int _portNumber = portNumber;
 
-            public void PortStore(byte value) => _mul._inputA = value;
-            public byte PortLoad() => (byte)(_mul.Product);
+            public void PortStore(byte value)
+            {
+                _mul._factors[_portNumber] = value;
+            }
+
+            public byte PortLoad()
+            {
+                return (byte)(_mul.Product >> (_portNumber * 8));
+            }
         }
 
-        private sealed class PortB(Multiplier mul) : IOPort
-        {
-            private readonly Multiplier _mul = mul;
-
-            public void PortStore(byte value) => _mul._inputB = value;
-            public byte PortLoad() => (byte)(_mul.Product >> 8);
-        }
-    }
-
-    /// <summary>
-    /// Represents a divider component that performs division operations using two I/O ports.
-    /// </summary>
-    /// <remarks>The <see cref="Divider"/> class registers two ports, PortA and PortB. 
-    /// These ports are used to perform division operations on byte values. 
-    /// The result of the division is split across the two ports, with PortA providing the quotient
-    /// and PortB providing the remainder. Division by zero returns what real logic gates would have returned.</remarks>
-    internal class Divider
+        /// <summary>
+        /// Represents a divider component that performs division operations using two I/O ports.
+        /// </summary>
+        /// <remarks>The <see cref="Divider"/> class registers two ports, PortA and PortB. 
+        /// These ports are used to perform division operations on byte values. 
+        /// The result of the division is split across the two ports, with PortA providing the quotient
+        /// and PortB providing the remainder. Division by zero returns what real logic gates would have returned.</remarks>
+        internal class Divider
     {
         private readonly PortA _portA;
         private readonly PortB _portB;

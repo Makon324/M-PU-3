@@ -32,12 +32,12 @@
   PST R2, 14     ; Set X coordinate and write pixel
 
   ADI R5, R5, 1  ; X = X + 1 → move to next column
-  SUB R4, R5, R7 ; R4 = X - 128 → compute Z flag (Z=1 when X == 128)
+  SUB R0, R5, R7 ; R4 = X - 128 → compute Z flag (Z=1 when X == 128)
   BRH 1, .loop_x ; If Z == 0 (X != 128), continue row; Otherwise exit inner loop
 
 .end_loop_x:
   ADI R6, R6, 1  ; Y = Y + 1 → next row
-  SUB R4, R6, R7 ; R4 = Y - 128 → set Z flag when Y == 128
+  SUB R0, R6, R7 ; R4 = Y - 128 → set Z flag when Y == 128
   BRH 1, .loop_y ; If Z == 0 (Y != 128), continue; Otherwise HLT 
 
   HLT            ; Halt CPU - image fully rendered

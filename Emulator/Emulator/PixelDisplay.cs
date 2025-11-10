@@ -297,6 +297,9 @@ namespace Emulator
             Render();
         }
 
+        /// <summary>
+        /// Renders the pixel grid if the window is open and the refresh interval has elapsed.
+        /// </summary>
         public void RenderIfNeeded()
         {
             if (!_isOpen)
@@ -315,6 +318,9 @@ namespace Emulator
             }
         }
 
+        /// <summary>
+        /// Updates the pixel grid, rendering it if needed.
+        /// </summary>
         public void UpdateGrid(Pixel[,] grid)
         {
             _grid = grid;
@@ -322,6 +328,9 @@ namespace Emulator
             RenderIfNeeded();
         }
 
+        /// <summary>
+        /// Renders the current pixel grid to the SDL2 window.
+        /// </summary>
         private void Render()
         {
             if (!_isOpen || _grid == null) return;            

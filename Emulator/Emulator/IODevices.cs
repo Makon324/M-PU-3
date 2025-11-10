@@ -9,7 +9,7 @@ namespace Emulator
     {
         public void PortStore(byte value)
         {
-            Console.Write((char)value);
+            Global.GetService<IRenderer>().WriteToConsole(((char)value).ToString());
         }
 
         public byte PortLoad()

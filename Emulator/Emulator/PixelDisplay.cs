@@ -30,8 +30,6 @@ namespace Emulator
         private byte _X;
         private byte _Y;
 
-        private long _lastRefreshTimestamp = 0;
-
         private SDLRenderer _renderer;
 
         /// <summary>
@@ -51,27 +49,7 @@ namespace Emulator
                 Blue = _RGBports[2].PortLoad()
             };
 
-            RefreshWindow();
-        }
-
-        private void RefreshWindow()
-        {
-            if (!_renderer.IsOpen)
-            {
-                _renderer.Start();
-            }
-
-            long now = Stopwatch.GetTimestamp();
-            if (now - _lastRefreshTimestamp >= Stopwatch.Frequency / Architecture.DISPLAY_HZ_FREQUENCY)
-            {
-                _lastRefreshTimestamp = now;
-
-                _renderer.RenderNewGrid(_grid);
-            }
-            else
-            {
-                return;
-            }
+            _renderer.UpdateGrid(_grid);
         }
 
         public PixelDisplay(CPUContext context, byte basePort, SDLRenderer renderer)
@@ -189,7 +167,9 @@ namespace Emulator
 
         public bool IsOpen => _isOpen;
 
-        public void Start()
+        private long _lastRefreshTimestamp = 0;
+
+        private void Start()
         {
             _isOpen = true;
 
@@ -241,7 +221,7 @@ namespace Emulator
             _aspectRatio = _currentWidth / (double)_currentHeight;
         }
 
-        public void PollEvents()
+        private void PollEvents()
         {
             while (SDL.SDL_PollEvent(out SDL.SDL_Event sdlEvent) != 0)
             {
@@ -317,11 +297,27 @@ namespace Emulator
             Render();
         }
 
-        public void RenderNewGrid(Pixel[,] grid)
+        public void RenderIfNeeded()
+        {
+            if (!_isOpen)
+            {
+                Start();
+            }
+
+            long now = Stopwatch.GetTimestamp();
+            if (now - _lastRefreshTimestamp >= Stopwatch.Frequency / Architecture.DISPLAY_HZ_FREQUENCY)
+            {
+                _lastRefreshTimestamp = now;
+
+                Render();
+            }
+        }
+
+        public void UpdateGrid(Pixel[,] grid)
         {
             _grid = grid;
 
-            Render();
+            RenderIfNeeded();
         }
 
         private void Render()

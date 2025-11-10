@@ -129,19 +129,27 @@ namespace Emulator
                 }
             }
 
+            public byte Value
+            {
+                get
+                {
+                    if (_pointIndex == PointIndex.X)
+                    {
+                        return (byte)_display._X;
+                    }
+                    else // _pointIndex == PointIndex.Y
+                    {
+                        return (byte)_display._Y;
+                    }
+                }
+            }
+
             /// <summary>
             /// Loads the current value of the X or Y coordinate.
             /// </summary>
             public byte PortLoad()
             {
-                if (_pointIndex == PointIndex.X)
-                {
-                    return (byte)_display._X;
-                }
-                else // _pointIndex == PointIndex.Y
-                {
-                    return (byte)_display._Y;
-                }
+                return Value;
             }
         }
     }

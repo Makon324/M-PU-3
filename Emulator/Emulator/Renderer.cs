@@ -89,7 +89,7 @@ namespace Emulator
                 if (port != null)
                 {
                     hasPorts = true;
-                    byte val = port.PortLoad();
+                    byte val = port.Value;
                     sb.AppendLine($"Port 0x{p:X2}: 0x{val:X2}");
                 }
             }

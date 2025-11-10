@@ -46,9 +46,11 @@ namespace Emulator
                 _mul._factors[_portNumber] = value;
             }
 
+            public byte Value { get => (byte)(_mul.Product >> (_portNumber * 8)); }
+
             public byte PortLoad()
             {
-                return (byte)(_mul.Product >> (_portNumber * 8));
+                return Value;
             }
         }
     }
@@ -95,7 +97,9 @@ namespace Emulator
 
             public void PortStore(byte value) => _div._divisor = value;
 
-            public byte PortLoad() => _div.Quotient;
+            public byte Value { get => _div.Quotient; }
+
+            public byte PortLoad() => Value;
         }
 
         private sealed class PortB(Divider div) : IOPort
@@ -104,7 +108,9 @@ namespace Emulator
 
             public void PortStore(byte value) => _div._dividend = value;
 
-            public byte PortLoad() => _div.Mod;
+            public byte Value { get => _div.Mod; }
+
+            public byte PortLoad() => Value;
         }
     }
 
@@ -114,14 +120,17 @@ namespace Emulator
     internal sealed class RNG : IOPort
     {
         private readonly Random _random = new Random();
+
         public void PortStore(byte value)
         {
             // RNG does not support storing values.
         }
 
+        public byte Value { get => (byte)_random.Next(0, 256); }
+
         public byte PortLoad()
         {
-            return (byte)_random.Next(0, 256);
+            return Value;
         }
     }
 
@@ -169,7 +178,9 @@ namespace Emulator
                 // Timer ports are read-only; storing has no effect.
             }
 
-            public byte PortLoad() => (byte)((_timer.ElapsedMs >> _portNumber * 8) & 0xFF);
+            public byte Value => (byte)((_timer.ElapsedMs >> _portNumber * 8) & 0xFF);
+
+            public byte PortLoad() => Value;
         }
     }
 

@@ -5,6 +5,8 @@
     /// </summary>
     internal interface IOPort
     {
+        public byte Value { get; }
+
         void PortStore(byte value);
 
         byte PortLoad();
@@ -24,6 +26,7 @@
             _ports[portNumber] = device;
             return true;
         }
+
         public bool TryRegisterPort(Index portNumber, IOPort device)
         {
             return TryRegisterPort((byte)portNumber.GetOffset(Architecture.IO_PORT_COUNT), device);

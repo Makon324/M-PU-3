@@ -7,6 +7,8 @@ namespace Emulator
     /// </summary>
     internal sealed class ConsoleOutputDevice : IOPort
     {
+        public byte Value { get => 0; }
+
         public void PortStore(byte value)
         {
             Global.GetService<IRenderer>().WriteToConsole(((char)value).ToString());
@@ -14,7 +16,7 @@ namespace Emulator
 
         public byte PortLoad()
         {
-            return 0; // Loading from this device is not supported; return 0 as a default.
+            return Value; // Loading from this device is not supported; return 0 as a default.
         }
     }
 
@@ -43,6 +45,21 @@ namespace Emulator
             if (value == 0)
             {
                 _keyQueue.Clear();
+            }
+        }
+
+        public byte Value
+        {
+            get
+            {
+                if (_keyQueue.Count == 0)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return (byte)_keyQueue.Peek();
+                }
             }
         }
 

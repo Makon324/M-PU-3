@@ -304,6 +304,8 @@ namespace Emulator
                 Start();
             }
 
+            PollEvents();
+
             long now = Stopwatch.GetTimestamp();
             if (now - _lastRefreshTimestamp >= Stopwatch.Frequency / Architecture.DISPLAY_HZ_FREQUENCY)
             {
@@ -322,9 +324,7 @@ namespace Emulator
 
         private void Render()
         {
-            if (!_isOpen || _grid == null) return;
-
-            PollEvents();
+            if (!_isOpen || _grid == null) return;            
 
             // MAIN RENDERING LOGIC
 

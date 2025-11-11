@@ -216,12 +216,13 @@ namespace Emulator
             _window.SetActive(true);
 
             // Remove maximize button (Windows-specific)
-            #if WINDOWS
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
                 IntPtr handle = _window.SystemHandle;
                 IntPtr style = GetWindowLongPtr(handle, GWL_STYLE);
                 style = new IntPtr(style.ToInt64() & ~WS_MAXIMIZEBOX);
                 SetWindowLongPtr(handle, GWL_STYLE, style);
-            #endif
+            }
 
             _texture = new Texture((uint)Architecture.DISPLAY_SIZE.Width, (uint)Architecture.DISPLAY_SIZE.Height);
             _sprite = new Sprite(_texture);

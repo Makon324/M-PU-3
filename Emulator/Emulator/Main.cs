@@ -1,8 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using SDL2;
-using System.Diagnostics;
-using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Emulator.Tests")]
@@ -36,17 +33,17 @@ namespace Emulator
 
             Program program = ProgramLoader.LoadProgram(programPath);
 
-            CPU cpu = InitializeCPU(program, out SDLRenderer SDLrenderer);
+            CPU cpu = InitializeCPU(program);
 
             SetupServices(mode);
 
             if (mode == Mode.Normal)
             {
-                RunNormal(cpu, SDLrenderer);
+                RunNormal(cpu);
             }
             else
             {
-                RunDebug(cpu, SDLrenderer);
+                RunDebug(cpu);
             }
         }
 
@@ -100,15 +97,12 @@ namespace Emulator
         /// </summary>
         /// <param name="program">The loaded program.</param>
         /// <param name="mode">The execution mode.</param>
-        /// <param name="SDLrenderer">The initialized renderer.</param>
         /// <returns>The constructed CPU.</returns>
-        private static CPU InitializeCPU(Program program, out SDLRenderer SDLrenderer)
+        private static CPU InitializeCPU(Program program)
         {
             ICPUDirector director = new CPUBuildingDirector();
 
-            SDLrenderer = new SDLRenderer();
-
-            CPU cpu = director.Construct(program, SDLrenderer);
+            CPU cpu = director.Construct(program);
 
             return cpu;
     }
@@ -137,11 +131,11 @@ namespace Emulator
         /// </summary>
         /// <param name="cpu">The CPU instance.</param>
         /// <param name="renderer">The renderer instance.</param>
-        private static void RunNormal(CPU cpu, SDLRenderer SDLrenderer)
+        private static void RunNormal(CPU cpu)
         {
             cpu.Run();
 
-            AfterRun(SDLrenderer);
+            AfterRun();
         }
 
         /// <summary>
@@ -149,7 +143,7 @@ namespace Emulator
         /// </summary>
         /// <param name="cpu">The CPU instance.</param>
         /// <param name="renderer">The renderer instance.</param>
-        private static void RunDebug(CPU cpu, SDLRenderer SDLrenderer)
+        private static void RunDebug(CPU cpu)
         {
             Global.GetService<IRenderer>().Render(cpu.Context);
 
@@ -161,8 +155,6 @@ namespace Emulator
                 {
                     cpu.Step();
                     Global.GetService<IRenderer>().Render(cpu.Context);
-                    if (SDLrenderer.IsOpen)
-                        SDLrenderer.RenderIfNeeded();
                 }
                 else if (key.Key == ConsoleKey.Escape)
                 {
@@ -170,19 +162,12 @@ namespace Emulator
                 }
             }
 
-            AfterRun(SDLrenderer);
+            AfterRun();
         }
 
-        private static void AfterRun(SDLRenderer SDLrenderer)
+        private static void AfterRun()
         {
-            if (!SDLrenderer.IsOpen)
-                return;
-
-            do
-            {
-                SDLrenderer.RenderIfNeeded();
-                SDL.SDL_Delay(20);  // Small delay (20ms) to reduce CPU usage while polling events frequently
-            } while (SDLrenderer.IsOpen);
+            Console.ReadKey();  // Wait for any key press before closing
         }
     }
 }

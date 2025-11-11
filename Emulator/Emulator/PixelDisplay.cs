@@ -1,10 +1,12 @@
-﻿using SDL2;
+﻿using SFML.Graphics;
+using SFML.System;
+using SFML.Window;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Emulator
 {
-    struct Pixel
+    internal struct Pixel
     {
         public byte Red;
         public byte Green;
@@ -12,7 +14,7 @@ namespace Emulator
     }
 
     /// <remarks>Used to make one PointXY class instead of 2.</remarks>
-    public enum PointIndex : byte
+    internal enum PointIndex : byte
     {
         X = 0,
         Y = 1
@@ -30,7 +32,7 @@ namespace Emulator
         private byte _X;
         private byte _Y;
 
-        private SDLRenderer _renderer;
+        private SFMLRenderer _renderer;
 
         /// <summary>
         /// Retrieves the pixel at specified coordinates. Used for testing.
@@ -49,19 +51,16 @@ namespace Emulator
                 Blue = _RGBports[2].PortLoad()
             };
 
-            _renderer.UpdateGrid(_grid);
+            _renderer.UpdateGrid();
         }
 
-        public PixelDisplay(CPUContext context, byte basePort, SDLRenderer renderer)
+        public PixelDisplay(CPUContext context, byte basePort)
         {
             if (basePort >= Architecture.IO_PORT_COUNT - 4)
                 throw new ArgumentOutOfRangeException(nameof(basePort),
                     $"Base port must be <= {Architecture.IO_PORT_COUNT - 4} to allow four consecutive ports.");
 
-            if (renderer == null)
-                throw new ArgumentNullException(nameof(renderer));
-
-            _renderer = renderer;
+            _renderer = new SFMLRenderer(_grid);
 
             bool registered = true;
 
@@ -155,13 +154,13 @@ namespace Emulator
     }
 
     /// <summary>
-    /// Renders a pixel grid to an SDL2 window.
+    /// Renders a pixel grid to an SFML window.
     /// </summary>
-    internal sealed class SDLRenderer : IDisposable
+    internal sealed class SFMLRenderer : IDisposable
     {
-        private IntPtr _window;
-        private IntPtr _rendererPtr;
-        private IntPtr _texture;
+        private RenderWindow? _window;
+        private Texture? _texture;
+        private Sprite? _sprite;
 
         private bool _isOpen = false;
 
@@ -171,103 +170,119 @@ namespace Emulator
         private int _currentHeight;
         private double _aspectRatio;
 
-        private readonly byte[] _pixelsBuffer = new byte[Architecture.DISPLAY_SIZE.Width * Architecture.DISPLAY_SIZE.Height * 3];
+        private readonly byte[] _pixelsBuffer = new byte[Architecture.DISPLAY_SIZE.Width * Architecture.DISPLAY_SIZE.Height * 4]; // RGBA
 
         public bool IsOpen => _isOpen;
 
         private long _lastRefreshTimestamp = 0;
 
+        private Thread? _renderThread;
+        private readonly object _syncLock = new object();
+        private bool _needsRender = false;  // Flag for when grid updates
+
+        // P/Invoke for Windows API to modify window styles
+        private const int GWL_STYLE = -16;
+        private const int WS_MAXIMIZEBOX = 0x10000;
+
+        [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr")]
+        private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr")]
+        private static extern IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+        public SFMLRenderer(Pixel[,] grid)
+        {
+            _grid = grid;  // grid reference
+        }
+
         private void Start()
         {
+            if (_isOpen) return;
+
             _isOpen = true;
-
-            if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
-            {
-                throw new InvalidOperationException($"SDL_Init failed: {SDL.SDL_GetError()}");
-            }
-
-            // Create window
-            _window = SDL.SDL_CreateWindow(
-                "Pixel Display",
-                SDL.SDL_WINDOWPOS_CENTERED,
-                SDL.SDL_WINDOWPOS_CENTERED,
-                Architecture.DISPLAY_SIZE.Width,
-                Architecture.DISPLAY_SIZE.Height,
-                SDL.SDL_WindowFlags.SDL_WINDOW_RESIZABLE
-            );
-
-            if (_window == IntPtr.Zero)
-            {
-                throw new InvalidOperationException($"SDL_CreateWindow failed: {SDL.SDL_GetError()}");
-            }
-
-            _rendererPtr = SDL.SDL_CreateRenderer(_window, -1, SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED);
-
-            if (_rendererPtr == IntPtr.Zero)
-            {
-                throw new InvalidOperationException($"SDL_CreateRenderer failed: {SDL.SDL_GetError()}");
-            }
-
-            SDL.SDL_SetHint(SDL.SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-
-            _texture = SDL.SDL_CreateTexture(
-                _rendererPtr,
-                SDL.SDL_PIXELFORMAT_RGB24,
-                (int)SDL.SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING,
-                Architecture.DISPLAY_SIZE.Width,
-                Architecture.DISPLAY_SIZE.Height
-            );
-
-            if (_texture == IntPtr.Zero)
-            {
-                throw new InvalidOperationException($"SDL_CreateTexture failed: {SDL.SDL_GetError()}");
-            }
-
-            // Initialize aspect ratio and current size
+            _aspectRatio = Architecture.DISPLAY_SIZE.Width / (double)Architecture.DISPLAY_SIZE.Height;
             _currentWidth = Architecture.DISPLAY_SIZE.Width;
             _currentHeight = Architecture.DISPLAY_SIZE.Height;
-            _aspectRatio = _currentWidth / (double)_currentHeight;
+
+            _renderThread = new Thread(RenderLoop);
+            _renderThread.IsBackground = true;  // Ensures it exits with app
+            _renderThread.Start();
         }
 
-        private void PollEvents()
+        private void RenderLoop()
         {
-            while (SDL.SDL_PollEvent(out SDL.SDL_Event sdlEvent) != 0)
+            // Create window and resources on this thread
+            _window = new RenderWindow(new VideoMode((uint)Architecture.DISPLAY_SIZE.Width, (uint)Architecture.DISPLAY_SIZE.Height), "Pixel Display", Styles.Default);
+            _window.SetActive(true);
+
+            // Remove maximize button (Windows-specific)
+            #if WINDOWS
+                IntPtr handle = _window.SystemHandle;
+                IntPtr style = GetWindowLongPtr(handle, GWL_STYLE);
+                style = new IntPtr(style.ToInt64() & ~WS_MAXIMIZEBOX);
+                SetWindowLongPtr(handle, GWL_STYLE, style);
+            #endif
+
+            _texture = new Texture((uint)Architecture.DISPLAY_SIZE.Width, (uint)Architecture.DISPLAY_SIZE.Height);
+            _sprite = new Sprite(_texture);
+
+            _window.Closed += (sender, e) =>
             {
-                switch (sdlEvent.type)
+                _isOpen = false;
+                Environment.Exit(0);  // Exit the entire program
+            };
+            _window.Resized += HandleResize;
+
+            while (_isOpen)
+            {
+                _window.DispatchEvents();  // Handle events
+
+                long now = Stopwatch.GetTimestamp();
+                if (now - _lastRefreshTimestamp >= Stopwatch.Frequency / Architecture.DISPLAY_HZ_FREQUENCY)
                 {
-                    case SDL.SDL_EventType.SDL_QUIT:
-                        _isOpen = false;
-                        break;
-                    case SDL.SDL_EventType.SDL_WINDOWEVENT:
-                        if (sdlEvent.window.windowEvent == SDL.SDL_WindowEventID.SDL_WINDOWEVENT_RESIZED)
+                    _lastRefreshTimestamp = now;
+
+                    lock (_syncLock)
+                    {
+                        if (_grid != null && _needsRender)
                         {
-                            HandleResize(sdlEvent);
+                            UpdateTexture();
+                            _needsRender = false;
                         }
-                        break;
+                    }
+
+                    Render();
                 }
+
+                Thread.Sleep(5);  // Light sleep to avoid 100% CPU
             }
+
+            // Cleanup on this thread
+            _sprite.Dispose();
+            _texture.Dispose();
+            _window.Dispose();
         }
 
-        private void HandleResize(SDL.SDL_Event sdlEvent)
+        private void HandleResize(object? sender, SizeEventArgs e)
         {
-            int newWidth = sdlEvent.window.data1;
-            int newHeight = sdlEvent.window.data2;
+            uint newWidth = e.Width;
+            uint newHeight = e.Height;
 
-            if (newWidth == _currentWidth && newHeight == _currentHeight) return;
+            if ((int)newWidth == _currentWidth && (int)newHeight == _currentHeight) return;
 
             // Detect which dimension was primarily resized and adjust the other to maintain aspect ratio
-            int adjustedWidth = newWidth;
-            int adjustedHeight = newHeight;
+            int adjustedWidth = (int)newWidth;
+            int adjustedHeight = (int)newHeight;
 
-            if (newWidth != _currentWidth && newHeight == _currentHeight)
+            if (newWidth != (uint)_currentWidth && newHeight == (uint)_currentHeight)
             {
                 // Width was resized (side drag), adjust height
                 adjustedHeight = (int)(newWidth / _aspectRatio);
             }
-            else if (newHeight != _currentHeight && newWidth == _currentWidth)
+            else if (newHeight != (uint)_currentHeight && newWidth == (uint)_currentWidth)
             {
                 // Height was resized (top/bottom drag), adjust width
-                adjustedWidth = (int)(newHeight * _aspectRatio);                
+                adjustedWidth = (int)(newHeight * _aspectRatio);
             }
             else
             {
@@ -295,113 +310,68 @@ namespace Emulator
             }
 
             // Apply the adjusted size
-            SDL.SDL_SetWindowSize(_window, adjustedWidth, adjustedHeight);
+            _window!.Size = new Vector2u((uint)adjustedWidth, (uint)adjustedHeight);
 
             // Update current size
             _currentWidth = adjustedWidth;
             _currentHeight = adjustedHeight;
 
-            // Render the grid again to fit new size
-            Render();
-        }
-
-        /// <summary>
-        /// Renders the pixel grid if the window is open and the refresh interval has elapsed.
-        /// </summary>
-        public void RenderIfNeeded()
-        {
-            if (!_isOpen)
-            {
-                Start();
-            }
-
-            PollEvents();
-
-            long now = Stopwatch.GetTimestamp();
-            if (now - _lastRefreshTimestamp >= Stopwatch.Frequency / Architecture.DISPLAY_HZ_FREQUENCY)
-            {
-                _lastRefreshTimestamp = now;
-
-                Render();
-            }
+            // Render again if needed
         }
 
         /// <summary>
         /// Updates the pixel grid, rendering it if needed.
         /// </summary>
-        public void UpdateGrid(Pixel[,] grid)
+        public void UpdateGrid()
         {
-            _grid = grid;
+            if (!IsOpen)
+            {
+                Start();
+            }
 
-            RenderIfNeeded();
+            _needsRender = true;
         }
 
-        /// <summary>
-        /// Renders the current pixel grid to the SDL2 window.
-        /// </summary>
-        private void Render()
+        private void UpdateTexture()
         {
-            if (!_isOpen || _grid == null) return;            
+            if (_grid == null) return;
 
-            // MAIN RENDERING LOGIC
-
-            // Fill the pixel buffer from the grid
+            // Fill the pixel buffer from the grid (RGBA)
             for (int y = 0; y < Architecture.DISPLAY_SIZE.Height; y++)
             {
                 for (int x = 0; x < Architecture.DISPLAY_SIZE.Width; x++)
                 {
                     Pixel p = _grid[y, x];
-                    int index = (y * Architecture.DISPLAY_SIZE.Width + x) * 3;
+                    int index = (y * Architecture.DISPLAY_SIZE.Width + x) * 4;
                     _pixelsBuffer[index] = p.Red;
                     _pixelsBuffer[index + 1] = p.Green;
                     _pixelsBuffer[index + 2] = p.Blue;
+                    _pixelsBuffer[index + 3] = 255; // Alpha
                 }
             }
 
-            // Lock the texture to get a pointer for writing
-            if (SDL.SDL_LockTexture(_texture, IntPtr.Zero, out IntPtr lockedPixels, out int pitch) != 0)
-            {
-                throw new InvalidOperationException($"SDL_LockTexture failed: {SDL.SDL_GetError()}");
-            }
+            _texture!.Update(_pixelsBuffer);
+        }
 
-            // Copy the managed array to the texture
-            unsafe
-            {
-                byte* dst = (byte*)lockedPixels;
-                for (int y = 0; y < Architecture.DISPLAY_SIZE.Height; y++)
-                {                    
-                    int srcOffset = y * Architecture.DISPLAY_SIZE.Width * 3; // Source row start
+        /// <summary>
+        /// Renders the current pixel grid to the SFML window.
+        /// </summary>
+        private void Render()
+        {
+            if (!_isOpen) return;
 
-                    byte* dstRow = dst + y * pitch; // Destination row start
-                    
-                    Marshal.Copy(_pixelsBuffer, srcOffset, (IntPtr)dstRow, Architecture.DISPLAY_SIZE.Width * 3);
-                }
-            }
-
-            SDL.SDL_UnlockTexture(_texture);
-            SDL.SDL_RenderClear(_rendererPtr);
-            SDL.SDL_RenderCopy(_rendererPtr, _texture, IntPtr.Zero, IntPtr.Zero);
-            SDL.SDL_RenderPresent(_rendererPtr);
+            _window!.Clear();
+            _window.Draw(_sprite);
+            _window.Display();
         }
 
         public void Dispose()
         {
-            if (_texture != IntPtr.Zero)
+            lock (_syncLock)
             {
-                SDL.SDL_DestroyTexture(_texture);
-                _texture = IntPtr.Zero;
+                _isOpen = false;
             }
-            if (_rendererPtr != IntPtr.Zero)
-            {
-                SDL.SDL_DestroyRenderer(_rendererPtr);
-                _rendererPtr = IntPtr.Zero;
-            }
-            if (_window != IntPtr.Zero)
-            {
-                SDL.SDL_DestroyWindow(_window);
-                _window = IntPtr.Zero;
-            }
-            SDL.SDL_Quit();
+            _renderThread?.Join();  // Wait for thread to exit
         }
     }
 }

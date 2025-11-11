@@ -65,10 +65,10 @@
             return this;
         }
 
-        public CPUBuilder RegisterPixelDisplay(byte basePort, SDLRenderer renderer)
+        public CPUBuilder RegisterPixelDisplay(byte basePort)
         {
             CheckPortAvailability(basePort, 5);  // RGB + X/Y = 5 ports
-            var display = new PixelDisplay(_cpu.Context, basePort, renderer);
+            var display = new PixelDisplay(_cpu.Context, basePort);
             return this;
         }
 
@@ -102,7 +102,7 @@
     /// </summary>
     internal interface ICPUDirector
     {
-        CPU Construct(Program program, SDLRenderer? renderer = null);
+        CPU Construct(Program program);
     }
 
     /// <summary>
@@ -115,18 +115,14 @@
         /// RNG (port 4), timer (ports 5-8), and pixel display (ports 11-15), console output (port 32).
         /// </summary>
         /// <param name="program">The program to associate with the CPU.</param>
-        public CPU Construct(Program program, SDLRenderer? renderer = null)
+        public CPU Construct(Program program)
         {
-            var builder = new CPUBuilder(program)
+            return new CPUBuilder(program)
                 .RegisterMultiplier(0)  // Ports 0-1
                 .RegisterDivider(2)     // Ports 2-3
                 .RegisterRNG(4)         // Port 4
-                .RegisterTimer(5);      // Ports 5-8
-            if (renderer != null)
-            {
-                builder = builder.RegisterPixelDisplay(11, renderer); // Ports 11-15
-            }
-            return builder
+                .RegisterTimer(5)       // Ports 5-8
+                .RegisterPixelDisplay(11) // Ports 11-15
                 .RegisterConsoleOutputDevice(32) // Port 32
                 .Build();
         }

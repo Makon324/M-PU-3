@@ -1,4 +1,4 @@
-﻿using System.Text;
+﻿   using System.Text;
 
 namespace Emulator
 {
@@ -39,13 +39,13 @@ namespace Emulator
         // Buffer with that is gonna be printed to console
         private string _consoleBuffer = string.Empty;
 
+        private string _oldConsoleBuffer = string.Empty;
+
         /// <summary>
         /// Renders the complete CPU state to the console using only CPUContext
         /// </summary>
         public void Render(CPU cpu)
         {
-            Console.Clear();
-
             Console.CursorVisible = false;
 
             CPUContext context = cpu.Context;
@@ -151,7 +151,38 @@ namespace Emulator
             sb.Append(_consoleBuffer);
             sb.AppendLine("\n=====================");
 
-            Console.Write(sb.ToString());
+            UpdateConsole(sb.ToString());
+        }
+
+        private void UpdateConsole(string newContent)
+        {
+            string[] newLines = newContent.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            string[] oldLines = _oldConsoleBuffer.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+
+            int maxLines = Math.Max(newLines.Length, oldLines.Length);
+
+            for (int row = 0; row < maxLines; row++)
+            {
+                bool isNew = row < newLines.Length;
+                string newLine = isNew ? newLines[row] : "";
+                string oldLine = (row < oldLines.Length) ? oldLines[row] : "";
+
+                int maxCols = Math.Max(newLine.Length, oldLine.Length);
+
+                for (int col = 0; col < maxCols; col++)
+                {
+                    char newChar = col < newLine.Length ? newLine[col] : ' ';
+                    char oldChar = col < oldLine.Length ? oldLine[col] : ' ';
+
+                    if (newChar != oldChar)
+                    {
+                        Console.SetCursorPosition(col, row);
+                        Console.Write(newChar);
+                    }
+                }
+            }
+
+            _oldConsoleBuffer = newContent;
         }
 
         public void WriteToConsole(string content)

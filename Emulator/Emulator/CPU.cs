@@ -20,6 +20,10 @@
 
         public ref CPUContext Context => ref _context;
 
+        internal Instruction[] GetPipeline() => _pipeline.GetPipeline();
+
+        internal Program GetProgram() => _program;
+
         /// <summary>
         /// Starts program execution, advancing the instruction pipeline and executing instructions until a Halt instruction is encountered.
         /// </summary>

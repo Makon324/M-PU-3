@@ -57,7 +57,7 @@ namespace Emulator
             if (args.Length < 1 || args.Length > 2)
             {
                 Usage();
-            }
+            }            
 
             string? programPath = null;
             bool debug = false;
@@ -145,7 +145,7 @@ namespace Emulator
         /// <param name="renderer">The renderer instance.</param>
         private static void RunDebug(CPU cpu)
         {
-            Global.GetService<IRenderer>().Render(cpu.Context);
+            Global.GetService<IRenderer>().Render(cpu);
 
             while (!cpu.Context.Halted)
             {
@@ -154,7 +154,7 @@ namespace Emulator
                 if (key.Key == ConsoleKey.F10)
                 {
                     cpu.Step();
-                    Global.GetService<IRenderer>().Render(cpu.Context);
+                    Global.GetService<IRenderer>().Render(cpu);
                 }
                 else if (key.Key == ConsoleKey.Escape)
                 {

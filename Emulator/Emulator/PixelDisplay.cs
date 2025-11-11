@@ -13,13 +13,6 @@ namespace Emulator
         public byte Blue;
     }
 
-    /// <remarks>Used to make one PointXY class instead of 2.</remarks>
-    internal enum PointIndex : byte
-    {
-        X = 0,
-        Y = 1
-    }
-
     /// <summary>
     /// RGB pixel grid controlled via I/O ports (R, G, B + X/Y). Renders to a native window.
     /// </summary>
@@ -72,7 +65,7 @@ namespace Emulator
             }
 
             // Register X, Y ports
-            foreach (PointIndex pointIndex in Enum.GetValues<PointIndex>())
+            foreach (PortXY.PointIndex pointIndex in Enum.GetValues<PortXY.PointIndex>())
             {
                 var portXY = new PortXY(this, pointIndex);
                 registered &= context.Ports.TryRegisterPort(basePort + 3 + (byte)pointIndex, portXY);
@@ -80,12 +73,18 @@ namespace Emulator
 
             if (!registered)
                 throw new InvalidOperationException($"Failed to register PixelDisplay ports at {basePort} to {basePort + 3}.");
-        }
+        }        
 
         private sealed class PortXY : IOPort
         {
             private readonly PixelDisplay _display;
             private readonly PointIndex _pointIndex;
+
+            internal enum PointIndex : byte
+            {
+                X = 0,
+                Y = 1
+            }
 
             public PortXY(PixelDisplay display, PointIndex pointIndex)
             {

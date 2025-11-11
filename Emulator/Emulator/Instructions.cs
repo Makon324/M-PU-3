@@ -1,20 +1,9 @@
 ﻿namespace Emulator
 {
-    internal enum ArgumentType
-    {
-        REGISTER,
-        NUMBER,
-        ADDRESS
-    }
-
-    internal abstract class Argument
-    {
-        public abstract ArgumentType Type { get; }
-    }
+    internal abstract class Argument { }
 
     internal sealed class RegisterArgument : Argument
     {
-        public override ArgumentType Type => ArgumentType.REGISTER;
         public byte Value { get; }
 
         public RegisterArgument(byte value)
@@ -30,13 +19,11 @@
 
     internal sealed class NumberArgument(byte value) : Argument
     {
-        public override ArgumentType Type => ArgumentType.NUMBER;
         public byte Value { get; } = value;
     }
 
     internal sealed class AddressArgument(ushort value) : Argument
     {
-        public override ArgumentType Type => ArgumentType.ADDRESS;
         public ushort Value { get; } = value;
     }
 

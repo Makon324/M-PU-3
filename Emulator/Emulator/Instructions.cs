@@ -15,16 +15,31 @@
         {
             Value = (byte)register;
         }
+
+        public override string ToString()
+        {
+            return ((Register)Value).ToString();
+        }
     }
 
     internal sealed class NumberArgument(byte value) : Argument
     {
         public byte Value { get; } = value;
+
+        public override string ToString()
+        {
+            return $"{Value}";
+        }
     }
 
     internal sealed class AddressArgument(ushort value) : Argument
     {
         public ushort Value { get; } = value;
+
+        public override string ToString()
+        {
+            return $"0x{Value:X4}";
+        }
     }
 
     internal sealed class Instruction : IEquatable<Instruction>
@@ -36,6 +51,16 @@
         {
             Mnemonic = mnemonic;
             Arguments = new List<Argument>(arguments ?? Array.Empty<Argument>());
+        }
+
+        public override string ToString()
+        {
+            if (Arguments.Count == 0)
+            {
+                return Mnemonic;
+            }
+
+            return $"{Mnemonic} {string.Join(", ", Arguments.Select(a => a.ToString()))}";
         }
 
         // IEquatable implementation

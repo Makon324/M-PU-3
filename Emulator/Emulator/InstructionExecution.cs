@@ -301,8 +301,8 @@ namespace Emulator
 
         public ExecuteMOVC(List<Argument> arguments)
         {
-            _source = (Register)((RegisterArgument)arguments[0]).Value;
-            _destination = (Register)((RegisterArgument)arguments[1]).Value;
+            _destination = (Register)((RegisterArgument)arguments[0]).Value;
+            _source = (Register)((RegisterArgument)arguments[1]).Value;
             _cond = ((NumberArgument)arguments[2]).Value;
         }
 

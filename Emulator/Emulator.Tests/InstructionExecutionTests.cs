@@ -397,7 +397,7 @@
         {
             // Arrange
             (var source, var dest) = TestHelpers.GetTwoRandomDistinctRegisters();
-            var args = new List<Argument> { new RegisterArgument(source), new RegisterArgument(dest), new NumberArgument(cond) };
+            var args = new List<Argument> { new RegisterArgument(dest), new RegisterArgument(source), new NumberArgument(cond) };
             var movc = new ExecuteMOVC(args);
             var context = new CPUContext();
             context.Registers[source] = sourceValue;

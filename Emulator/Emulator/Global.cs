@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
+using YamlDotNet.Serialization;
 
 namespace Emulator
 {
@@ -13,6 +14,84 @@ namespace Emulator
             if (Services == null)
                 throw new InvalidOperationException($"Service {typeof(T)} not registered.");
             return Services.GetRequiredService<T>();
+        }
+    }
+
+    internal class YAMLConfig
+    {
+        public YAMLConfig()
+        {
+            LoadConfig();  // Runs once on DI resolution
+        }
+
+        // Debug mode configurations
+        public ConsoleKey stepKey { get; private set; }
+        public ConsoleKey stepOverKey { get; private set; }
+        public bool doStepOverNOPsAfterRET { get; private set; }
+
+        private void LoadConfig()
+        {
+            // Set defaults first
+            stepKey = DefaultConfig.STEP_KEY;
+            stepOverKey = DefaultConfig.STEP_OVER_KEY;
+            doStepOverNOPsAfterRET = DefaultConfig.DO_STEP_OVER_NOPS_AFTER_RET;
+
+            try
+            {
+                string filePath = Path.Combine(
+                    ProjectPathResolver.FindSolutionRoot(),
+                    Paths.YAML_CONFIG_FILE);
+
+                if (File.Exists(filePath))
+                {
+                    string yamlContent = File.ReadAllText(filePath);
+                    var deserializer = new DeserializerBuilder().Build();
+                    var root = deserializer.Deserialize<RootConfig>(yamlContent);
+                    var debug = root?.DebugModeConfiguration;
+
+                    if (debug != null)
+                    {
+                        if (!string.IsNullOrWhiteSpace(debug.stepKey) &&
+                            Enum.TryParse<ConsoleKey>(debug.stepKey, true, out var parsedStepKey))
+                        {
+                            stepKey = parsedStepKey;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(debug.stepOverKey) &&
+                            Enum.TryParse<ConsoleKey>(debug.stepOverKey, true, out var parsedStepOverKey))
+                        {
+                            stepOverKey = parsedStepOverKey;
+                        }
+
+                        if (debug.doStepOverNOPsAfterRET.HasValue)
+                        {
+                            doStepOverNOPsAfterRET = debug.doStepOverNOPsAfterRET.Value;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new ConfigurationLoadException($"Config load failed: {ex.Message}.", ex);
+            }
+        }
+
+        private class RootConfig
+        {
+            public DebugConfig? DebugModeConfiguration { get; set; }
+        }
+
+        private class DebugConfig
+        {
+            public string? stepKey { get; set; }
+            public string? stepOverKey { get; set; }
+            public bool? doStepOverNOPsAfterRET { get; set; }
+        }
+
+        public class ConfigurationLoadException : Exception
+        {
+            public ConfigurationLoadException(string message, Exception innerException)
+                : base(message, innerException) { }
         }
     }
 

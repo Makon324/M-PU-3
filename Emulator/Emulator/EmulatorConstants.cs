@@ -25,8 +25,19 @@ namespace Emulator
     internal static class Paths
     {
         public const string INSTRUCTIONS_FILE = "instructions.json";
+        public const string YAML_CONFIG_FILE = "config.yaml";
         public const string PYTHON_ASSEMBLER = "Assembler";
 
         public const string MIN_PYTHON_VERSION = "3.12";
+    }
+
+    /// <summary>
+    /// Static class containing default configuration values configured in config.toml file.
+    /// </summary>
+    internal static class DefaultConfig
+    {
+        public const ConsoleKey STEP_KEY = ConsoleKey.F10;
+        public const ConsoleKey STEP_OVER_KEY = ConsoleKey.F11;
+        public const bool DO_STEP_OVER_NOPS_AFTER_RET = true;
     }
 }

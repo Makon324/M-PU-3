@@ -65,13 +65,16 @@
             }
 
             // Execute NOPs after RET
-            for (int i = 0; i < Architecture.INSTRUCTION_PIPELINE_SIZE; i++)
-            {                
-                if(currentMnemonic == "NOP")
+            if (Global.GetService<YAMLConfig>().doStepOverNOPsAfterRET)
+            {
+                for (int i = 0; i < Architecture.INSTRUCTION_PIPELINE_SIZE; i++)
                 {
-                    Step();
+                    if (currentMnemonic == "NOP")
+                    {
+                        Step();
+                    }
+                    currentMnemonic = _pipeline.GetPipeline()[0].Mnemonic;
                 }
-                currentMnemonic = _pipeline.GetPipeline()[0].Mnemonic;
             }
         }
 

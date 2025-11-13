@@ -107,8 +107,11 @@ namespace Emulator
                 _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null)
             };
 
+            YAMLConfig config = new YAMLConfig();
+
             var builder = Host.CreateApplicationBuilder();
             builder.Services.AddSingleton(renderer);
+            builder.Services.AddSingleton(config);
             var host = builder.Build();
             Global.Services = host.Services;
         }
@@ -140,11 +143,13 @@ namespace Emulator
             {
                 var key = Console.ReadKey(true);
 
-                if (key.Key == ConsoleKey.F10)
+                var config = Global.GetService<YAMLConfig>();
+
+                if (key.Key == config.stepKey)
                 {
                     cpu.Step();                    
                 }
-                else if (key.Key == ConsoleKey.F9)
+                else if (key.Key == config.stepOverKey)
                 {
                     cpu.StepOverCall();
                 }

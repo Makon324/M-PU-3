@@ -145,6 +145,8 @@ namespace Emulator
         /// <param name="renderer">The renderer instance.</param>
         private static void RunDebug(CPU cpu)
         {
+            Console.Clear();
+
             Global.GetService<IRenderer>().Render(cpu);
 
             while (!cpu.Context.Halted)
@@ -153,13 +155,18 @@ namespace Emulator
 
                 if (key.Key == ConsoleKey.F10)
                 {
-                    cpu.Step();
-                    Global.GetService<IRenderer>().Render(cpu);
+                    cpu.Step();                    
+                }
+                else if (key.Key == ConsoleKey.F9)
+                {
+                    cpu.StepOverCall();
                 }
                 else if (key.Key == ConsoleKey.Escape)
                 {
                     break;
                 }
+
+                Global.GetService<IRenderer>().Render(cpu);
             }
 
             AfterRun();

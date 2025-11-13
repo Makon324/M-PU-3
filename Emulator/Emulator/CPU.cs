@@ -38,6 +38,44 @@
         }
 
         /// <summary>
+        /// Advances the pipeline until the function used using current CAL is completed.
+        /// </summary>
+        public void StepOverCall()
+        {
+            string currentMnemonic = _pipeline.GetPipeline()[0].Mnemonic;
+
+            // Execute Called function
+            int? callDepth = null;
+
+            while ((callDepth ?? int.MaxValue) > 0)
+            {
+                callDepth ??= 0;
+
+                if (currentMnemonic == "CAL")
+                {
+                    callDepth++;
+                }
+                else if (currentMnemonic == "RET")
+                {
+                    callDepth--;
+                }
+
+                Step();
+                currentMnemonic = _pipeline.GetPipeline()[0].Mnemonic;
+            }
+
+            // Execute NOPs after RET
+            for (int i = 0; i < Architecture.INSTRUCTION_PIPELINE_SIZE; i++)
+            {                
+                if(currentMnemonic == "NOP")
+                {
+                    Step();
+                }
+                currentMnemonic = _pipeline.GetPipeline()[0].Mnemonic;
+            }
+        }
+
+        /// <summary>
         /// Advances the pipeline by 1 stage, executing 1 instruction.
         /// </summary>
         public void Step()

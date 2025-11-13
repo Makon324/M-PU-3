@@ -4,6 +4,10 @@ using YamlDotNet.Serialization;
 
 namespace Emulator
 {
+    /// <summary>
+    /// Provides access to the application's global service provider and helper methods
+    /// for retrieving registered services from anywhere in the application.
+    /// </summary>
     internal static class Global
     {
         public static IServiceProvider? Services { get; set; }

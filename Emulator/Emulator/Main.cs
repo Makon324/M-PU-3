@@ -83,7 +83,6 @@ namespace Emulator
         /// Initializes the CPU and renderer based on the execution mode.
         /// </summary>
         /// <param name="program">The loaded program.</param>
-        /// <param name="mode">The execution mode.</param>
         /// <returns>The constructed CPU.</returns>
         private static CPU InitializeCPU(Program program)
         {
@@ -97,7 +96,6 @@ namespace Emulator
         /// <summary>
         /// Sets up the dependency injection services.
         /// </summary>
-        /// <param name="renderer">The renderer to register.</param>
         private static void SetupServices(Mode mode)
         {
             IRenderer renderer = mode switch
@@ -120,7 +118,6 @@ namespace Emulator
         /// Runs the emulator in normal mode.
         /// </summary>
         /// <param name="cpu">The CPU instance.</param>
-        /// <param name="renderer">The renderer instance.</param>
         private static void RunNormal(CPU cpu)
         {
             cpu.Run();
@@ -132,7 +129,6 @@ namespace Emulator
         /// Runs the emulator in debug mode with step-by-step execution.
         /// </summary>
         /// <param name="cpu">The CPU instance.</param>
-        /// <param name="renderer">The renderer instance.</param>
         private static void RunDebug(CPU cpu)
         {
             Console.Clear();

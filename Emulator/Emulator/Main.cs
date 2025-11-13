@@ -12,19 +12,6 @@ namespace Emulator
         Debug
     }
 
-    public static class Global
-    {
-        public static IServiceProvider? Services { get; set; }
-
-        // Helper to get any service from anywhere
-        public static T GetService<T>() where T : notnull
-        {
-            if (Services == null)
-                throw new InvalidOperationException($"Service {typeof(T)} not registered.");
-            return Services.GetRequiredService<T>();
-        }
-    }
-
     internal static class App
     {
         private static void Main(string[] args)

@@ -1,10 +1,10 @@
 DebugModeConfiguration:
 
   # The key used to step through code
-  stepKey: F1
+  stepKey: F10
 
   # The key used to step over function call
-  stepOverKey: F2
+  stepOverKey: F9
 
   # Whether to automatically step over NOPs after a RET instruction
-  doStepOverNOPsAfterRET: false
+  doStepOverNOPsAfterRET: true

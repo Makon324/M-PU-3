@@ -32,6 +32,8 @@ namespace Emulator
             {
                 RunDebug(cpu);
             }
+
+            AfterRun();
         }
 
         /// <summary>
@@ -121,8 +123,6 @@ namespace Emulator
         private static void RunNormal(CPU cpu)
         {
             cpu.Run();
-
-            AfterRun();
         }
 
         /// <summary>
@@ -155,9 +155,7 @@ namespace Emulator
                 }
 
                 Global.GetService<IRenderer>().Render(cpu);
-            }
-
-            AfterRun();
+            }            
         }
 
         private static void AfterRun()

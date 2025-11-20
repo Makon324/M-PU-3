@@ -58,6 +58,17 @@
             return this;
         }
 
+        public CPUBuilder RegisterKeyboardDevice(byte portNumber)
+        {
+            CheckPortAvailability(portNumber, 1);
+            var keyboardDevice = new KeyboardDevice();
+            if (!_cpu.Context.Ports.TryRegisterPort(portNumber, keyboardDevice))
+            {
+                throw new InvalidOperationException($"Failed to register KeyboardDevice at port {portNumber}.");
+            }
+            return this;
+        }
+
         public CPUBuilder RegisterTimer(byte basePort)
         {
             CheckPortAvailability(basePort, 4);  // Needs 4 ports
@@ -124,6 +135,7 @@
                 .RegisterTimer(5)       // Ports 5-8
                 .RegisterPixelDisplay(11) // Ports 11-15
                 .RegisterConsoleOutputDevice(32) // Port 32
+                .RegisterKeyboardDevice(33) // Port 33
                 .Build();
         }
     }
